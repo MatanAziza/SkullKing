@@ -1,4 +1,5 @@
-VENV := .venv
+# VENV := .venv
+VENV := /usr
 PYTHON := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 ENTRY := main.py
@@ -26,5 +27,4 @@ run:
 	$(PYTHON) $(ENTRY)
 
 clean:
-	rm -rf $(VENV)
 	rm -rf .pytest_cache __pycache__ **/__pycache__
