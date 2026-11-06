@@ -11,13 +11,27 @@ class RPS:
         self.kraken = 0
 
 class Game:
-    def __init__(self, players: list[str]):
+    def __init__(self, players: list[str] = []):
         self.players: list[Player] = []
         self.ante = 1
         for p in players:
             self.players.append(Player(p))
         self.deck = Deck.new()
         shuffle(self.deck)
+
+    def add_player(self, name: str, room: str) -> str:
+        for player in self.players:
+            if player.name == name:
+                return "Player already exists. Choose another username"
+        self.players.append(Player(name))
+        return f"Player '{name}' joined room {room}"
+
+    def remove_player(self, name: str) -> str:
+        for i, player in enumerate(self.players):
+            if player.name == name:
+                self.players.pop(i)
+                return "Player already exists. Choose another username"
+        return f"Player '{name}' doesn't exist"
 
     def player_index(self, name: str):
         for i, player in enumerate(self.players):
