@@ -2,10 +2,11 @@ from .values import Color, Rank
 from .cards import Card, Pirate
 
 class Player:
-    def __init__(self, name: str):
+    def __init__(self, name: str, client):
         self.hand: list[Card] = []
         self.wins: list[list[Card]] = []
         self.name = name
+        self.client = client
         self.points = 0
         self.score = 0
         self.announce = 0

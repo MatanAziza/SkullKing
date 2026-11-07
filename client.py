@@ -1,4 +1,6 @@
 import socket
+import threading
+from utils import wait
 from sys import argv, exit
 
 target_host = "0.0.0.0"
@@ -21,22 +23,25 @@ client.connect((target_host, target_port))
 #sending data
 client.send(role.encode())
 #receiving the data
-response = client.recv(4096)
-print(response.decode())
-while True:
-    client.sendall((input()+'\n').encode())
-    response = client.recv(4096).decode()
-    if response[:2] != "OK":
-        print(response)
-        continue
-    print(response)
-    break
 print(client.recv(4096).decode())
 while True:
-    client.sendall((input()+'\n').encode())
-    response = client.recv(4096).decode()
-    if response[:2] != "OK":
+    while True:
+        client.sendall((input()+'\n').encode())
+        response = client.recv(4096).decode()
+        if "QUESTION" in response:
+            response = response[:response.index("QUESTION")]+'\n'+response[response.index("QUESTION"):]
+        mark = response.split(" ")[0]
         print(response)
-        continue
-    print(response)
-    break
+        if mark == "OK" or (mark == "WAIT" and role=="host"):
+            if "QUESTION" not in response:
+                print(client.recv(4096).decode())
+            continue
+        elif mark == "WAIT":
+            anim = threading.Thread(target=wait, daemon=True)
+            anim.start()
+            response = client.recv(4096).decode()
+            mark = response.split(" ")[0]
+        if mark == "START":
+            break
+    if mark == "START":
+        break
