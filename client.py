@@ -16,6 +16,9 @@ else:
         print("Wrong arg: need 'host' or 'join' ('join' by default)")
         exit()
     role = argv[-1]
+i = input("What IP addres do you want to connect to?")
+if i:
+    target_host = i
 #creating socket object
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #connecting the client
