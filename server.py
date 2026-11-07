@@ -5,7 +5,7 @@ from main import Game
 from cli import CLI
 
 bind_ip = "0.0.0.0"
-bind_port = 8080
+bind_port = 4242
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

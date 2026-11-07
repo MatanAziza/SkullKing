@@ -4,7 +4,7 @@ from utils import wait
 from sys import argv, exit
 
 target_host = "0.0.0.0"
-target_port = 8080
+target_port = 4242
 role: str = ""
 if len(argv) == 1:
     role = "join"
