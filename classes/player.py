@@ -1,18 +1,25 @@
 from .values import Color, Rank
 from .cards import Card, Pirate
+import socket
 
 class Player:
     def __init__(self, name: str, client):
         self.hand: list[Card] = []
         self.wins: list[list[Card]] = []
         self.name = name
-        self.client = client
+        self.client: socket.socket = client
         self.points = 0
         self.score = 0
         self.announce = 0
 
     def clear_hand(self):
         self.hand.clear()
+
+    def send(self, string: str):
+        self.client.send(string.encode())
+
+    def receive(self) -> str:
+        return self.client.recv(1024).decode("utf-8")
 
     def announces(self):
         return f"{self.name}'s hands: {self.score}/{self.announce}"
@@ -41,29 +48,30 @@ class Player:
         return score
 
     def show_hand(self):
-        print("\n".join([f"{i+1} - " + f"{card}" for i, card in enumerate(self.hand)]))
+        return "\n".join([f"{i+1} - " + f"{card}" for i, card in enumerate(self.hand)])
 
     def bet(self):
-        print("\033[2J\033[H", end='')
-        input(f"Press Enter to play, {self.name}")
-        print("\033[2J\033[H", end='')
-        print(f"This is your hand {self.name}:")
-        self.show_hand()
-        print("How many hands will you bet ?")
+        self.send(
+            f"OK \033[2J\033[HThis is your hand {self.name}:\n"
+            f"{self.show_hand()}\n"
+                )
         while True:
-            index = input("> ")
+            self.send(
+                "QUESTION How many hands will you bet ?\n")
+            index = self.receive()[:-1]
             try:
                 i = int(index)
             except ValueError:
-                print("Cant bet that! That's not a number!")
+                self.send("KO Cant bet that! That's not a number!")
                 continue
             if i > len(self.hand):
-                print("Cant bet that! You don't have that many cards!")
+                self.send("Ko Cant bet that! You don't have that many cards!")
                 continue
             if i < 0:
-                print("Cant bet that! You can't bet a negative number!")
+                self.send("KO Cant bet that! You can't bet a negative number!")
                 continue
             self.announce = i
+            self.send(f"OK. You bet {i} hands.")
             break
 
     def play(self, color: Color, whale):

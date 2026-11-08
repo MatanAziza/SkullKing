@@ -18,6 +18,8 @@ print(f"[+] Listening on port {bind_ip} : {bind_port}")
 rooms: dict[str, Any] = {}
 
 def game_manager(game: Game):
+    game.ante = 3
+    game.deal()
     for player in game.players:
         player.bet()
 
