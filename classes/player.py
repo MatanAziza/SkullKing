@@ -50,14 +50,17 @@ class Player:
     def show_hand(self):
         return "\n".join([f"{i+1} - " + f"{card}" for i, card in enumerate(self.hand)])
 
-    def bet(self):
+    def bet(self, barrier):
+        barrier.wait()
+
         self.send(
             f"OK \033[2J\033[HThis is your hand {self.name}:\n"
-            f"{self.show_hand()}\n"
+            f"{self.show_hand()}\t"
                 )
         while True:
             self.send(
-                "QUESTION How many hands will you bet ?\n")
+                "QUESTION How many hands will you bet ?\n"
+                    )
             index = self.receive()[:-1]
             try:
                 i = int(index)
@@ -71,7 +74,7 @@ class Player:
                 self.send("KO Cant bet that! You can't bet a negative number!")
                 continue
             self.announce = i
-            self.send(f"OK. You bet {i} hands.")
+            self.send(f"OK You bet {i} hands.")
             break
 
     def play(self, color: Color, whale):

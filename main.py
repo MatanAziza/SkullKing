@@ -121,10 +121,3 @@ class Game:
             if not [c for c in self.pli if c.value != 0]:
                 while type(self.pli[0]).__name__ != "WhiteWhale":
                     self.pli = self.pli[1:] + self.pli[:1]
-
-if __name__ == "__main__":
-    g = Game(["Matan", "Marie", "Nasser"])
-    g.ante = 3
-    g.deal()
-    g.players[0].hand[0] = ColorCard(14, Color.BLACK).own("Matan")
-    g.play()

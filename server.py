@@ -17,11 +17,22 @@ server.listen(5)
 print(f"[+] Listening on port {bind_ip} : {bind_port}")
 rooms: dict[str, Any] = {}
 
-def game_manager(game: Game):
+def game_manager(g: dict[str, Game]):
+    game = next(iter(g.values()))
     game.ante = 3
     game.deal()
+    barrier = threading.Barrier(len(game.players))
+    threads = []
     for player in game.players:
-        player.bet()
+        t = threading.Thread(target=player.bet, args=(barrier,))
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
+    bets = "STOP Players bets:\n" + '\n'.join([player.announces() for player in game.players])
+    for player in game.players:
+        player.send(bets)
+        player.client.close()
 
 def handle_client(client_socket):
     name, room = '', ''
@@ -41,10 +52,7 @@ def handle_client(client_socket):
         if role == 'host':
             interface.start(rooms[room])
             rooms[room].start = 1
-            threading.Thread(target=game_manager, args=(rooms.pop(room,)))
-        else:
-            while not rooms[room].start:
-                continue
+            threading.Thread(target=game_manager, args=({room: rooms.pop(room)},)).start()
     except BrokenPipeError:
         if room == '':
             print("Room wasnt created\n> ", end='')
@@ -57,7 +65,6 @@ def handle_client(client_socket):
         else:
             print("Need to delete whole game and send msg to everybody.\n> ", end='')
             # rooms[room].remove_player(name)
-    client_socket.close()
 
 def handle_server():
     options = {"help": "Display all commands", "rooms": "Display all existing rooms and the players in it"}
