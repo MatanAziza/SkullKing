@@ -11,12 +11,10 @@ class RPS:
         self.kraken = 0
 
 class Game:
-    def __init__(self, players: list[str] = []):
-        self.players: list[Player] = []
+    def __init__(self):
+        self.players = []
         self.ante = 1
         self.start = 0
-        for p in players:
-            self.players.append(Player(p))
         self.deck = Deck.new()
         shuffle(self.deck)
 

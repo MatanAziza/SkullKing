@@ -5,66 +5,78 @@ class CLI(Interface):
     def __init__(self, socket):
         self.socket = socket
 
+    def send(self, string: str):
+        self.socket.send(string.encode())
+
+    def receive(self) -> str:
+        return self.socket.recv(1024).decode("utf-8")
+
     def join_room(self, rooms: dict[str, Game]) -> str:
-        self.socket.send("QUESTION What's the room's name:".encode())
         while True:
-            request = self.socket.recv(1024).decode("utf-8")
+            self.send("QUESTION What's the room's name:\t")
+            request = self.receive()
             if request == '\n':
-                self.socket.send("KO Cant join room with empty name!\nWhat's the room's name:".encode())
+                self.send("KO Cant join room with empty name!\t")
                 continue
-            if rooms.get(request[:-1], "error") != "error":
+            request = request[:-1]
+            if rooms.get(request, "error") != "error":
                 break
-            self.socket.send("KO Room doesn't exists!\nWhat's the room's name:".encode())
-        self.socket.send(f"OK Room '{str(request[:-1])}' joined".encode())
-        return request[:-1]
+            self.send("KO Room doesn't exists!\t")
+        self.send(f"OK Room '{request}' joined.\t")
+        return request
 
     def create_room(self, rooms: dict[str, Game]) -> dict[str, Game]:
-        self.socket.send("QUESTION What's your room name:".encode())
         while True:
-            request = self.socket.recv(1024).decode("utf-8")
+            self.send("QUESTION What's your room name:\t")
+            request = self.receive()
             if request == '\n':
-                self.socket.send("KO Cant create room with empty name!\nWhat's your room name:".encode())
+                self.send("KO Cant create room with empty name!\t")
                 continue
-            if rooms.get(request[:-1], "error") == "error":
+            request = request[:-1]
+            if rooms.get(request, "error") == "error":
                 break
-            self.socket.send("KO Room already exists!\nWhat's your room name:".encode())
-        self.socket.send(f"OK Room created {str(request[:-1])}".encode())
-        return {request[:-1]: Game()}
+            self.send("KO Room already exists!\t")
+        self.send(f"OK Room created {request}.\t")
+        return {request: Game()}
 
-    def ask_name(self, room: Game):
+    def ask_name(self, room: Game, role: str='join') -> str:
         while True:
-            self.socket.send("QUESTION What's your username:".encode())
-            request = self.socket.recv(1024).decode("utf-8")
+            self.send("QUESTION What's your username:\t")
+            request = self.receive()
             if request == '\n':
-                self.socket.send("KO Cant create empty username!\nWhat's your username:".encode())
+                self.send("KO Cant create empty username!\t")
                 continue
+            request = request[:-1]
             players = [player.name for player in room.players]
-            if request[:-1] in players:
-                self.socket.send("KO User already exists!\nWhat's your username:".encode())
+            if request in players:
+                self.send("KO User already exists!\t")
                 continue
-            self.socket.send("CHECK Are you sure ? yes[y]/Enter | no[n]".encode())
-            check = self.socket.recv(1024).decode("utf-8")
+            self.send("CHECK Are you sure ? yes[y]/Enter | no[n]\t")
+            check = self.receive()
             if check in ["no\n", "n\n"]:
                 continue
             break
-        self.socket.send(f"WAIT Joined with username {str(request[:-1])}".encode())
-        return request[:-1]
+        self.send(f"OK Joined with username {request}\t")
+        self.send(role.upper()+"\t")
+        return request
 
     def start(self, game: Game):
         while True:
-            self.socket.send("CHECK Type 'start' to start the game".encode())
+            self.send("CHECK Type 'start' to start the game\t")
             while True:
-                request = self.socket.recv(1024).decode("utf-8")
+                request = self.receive()
                 if request != 'start\n':
-                    self.socket.send("KO Don't understand this command.\nType 'start' to start the game".encode())
+                    self.send("KO Don't understand this command.\nType 'start' to start the game")
                     continue
                 break
-            self.socket.send(
-                f"CHECK Would you like to start? Players are:\n{'\n'.join([player.name for player in game.players])}\nYes[y]/Enter | No[n]".encode()
-                            )
-            check = self.socket.recv(1024).decode("utf-8")
+            self.send(
+                "CHECK Would you like to start? Players are:\n"
+                f"{'\n'.join([player.name for player in game.players])}\n"
+                "Yes[y]/Enter | No[n]\t"
+                    )
+            check = self.receive()
             if check in ["no\n", "n\n"]:
                 continue
             for player in game.players:
-                player.client.send(f"START".encode())
+                player.client.send("START\t".encode())
             break

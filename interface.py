@@ -14,7 +14,5 @@ class Interface(ABC):
         pass
 
     @abstractmethod
-    def ask_name(self, room: Game):
+    def ask_name(self, room: Game) -> str:
         pass
-
-
