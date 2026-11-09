@@ -1,4 +1,3 @@
-import re
 import socket
 import threading
 from utils import wait
@@ -9,7 +8,7 @@ def clean_comm(message: str) -> str:
 
 def treat_ip():
     while True:
-        ip = input("What IP addres do you want to connect to? (default to 0.0.0.0)\n")
+        ip = input("What IP address do you want to connect to? (default to 0.0.0.0)\n")
         if not ip:
             return "0.0.0.0"
         parts = ip.split(".")
@@ -54,17 +53,15 @@ client.send(role.encode())
 while True:
     requests = client.recv(4096).decode().split("\t")
     requests = [r for r in requests if r]
-    last_r = ''
     for request in requests:
         r = clean_comm(request) if not request.startswith(("HOST", "JOIN", "START")) else request
-        print(r)
+        print(r if not r.startswith(("JOIN", "START")) else "\033[2J\033[HWaiting for the game to start ...")
+        if request.startswith("STOP"):
+            exit()
         if request.startswith(("QUESTION", "CHECK")):
             client.sendall((input()+'\n').encode())
         elif request.startswith("JOIN"):
             anim = threading.Thread(target=wait, daemon=True)
-            anim.start()
+            # anim.start()
         elif request.startswith("START"):
-            last_r = request
             break
-    if last_r.startswith("START"):
-        print(client.recv(4096).decode())

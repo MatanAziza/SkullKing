@@ -1,9 +1,16 @@
 from abc import ABC, abstractmethod
-from main import Game
+from game import Game
 
 class Interface(ABC):
     def __init__(self, socket):
         self.socket = socket
+
+    @abstractmethod
+    def send(self, string: str):
+        pass
+
+    def receive(self) -> str:
+        return self.socket.recv(1024).decode("utf-8")
 
     @abstractmethod
     def join_room(self, rooms: dict[str, Game]) -> str:
