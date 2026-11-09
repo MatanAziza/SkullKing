@@ -19,33 +19,52 @@ rooms: dict[str, Any] = {}
 
 def game_manager(g: dict[str, Game], name: str):
     game = next(iter(g.values()))
-    game.ante = 3
-    game.deal()
-    barrier = threading.Barrier(len(game.players))
-    threads = []
-    for player in game.players:
-        t = threading.Thread(target=player.bet, args=(barrier,))
-        threads.append(t)
-        t.start()
-    for t in threads:
-        t.join()
-    bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in game.players])+""
-    game.sendall(bets)
-    for i in range(len(game.players[0].hand)):
+    for _ in range(3):
+        game.deal()
+        barrier = threading.Barrier(len(game.players))
+        threads = []
         for player in game.players:
+            t = threading.Thread(target=player.bet, args=(barrier,))
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
+        bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in game.players])+""
+        game.sendall(bets)
+        for i in range(len(game.players[0].hand)):
+            for player in game.players:
+                if player.name == name:
+                    t = threading.Thread(target=player.signal, args=(game, "OK \033[2J\033[HCards played:",))
+                    t.start()
+                else:
+                    player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...")
+            t.join()
+            game.plis()
+        final = "OK \033[2J\033[H"
+        r_name = []
+        r_points = []
+        for player in game.players:
+            announces = f"{player.announces()} -> "
+            points, hands = player.scores(game.ante)
+            player.points += points
+            final += f"{announces}\n{hands}\n"
+            r_name.append(player.name)
+            r_points.append(player.points)
+        oz = sorted(zip(r_points, r_name), reverse=True)
+        z = [f"{x} with {y} points" for y, x in oz]
+        ranking = "\n".join([f"{i+1} - {elem}" for i, elem in enumerate(z)])
+        final += ranking
+        game.sendall(final+'\t')
+        game.ante += 1
+        for player in game.players:
+            player.score = 0
+            player.wins.clear()
             if player.name == name:
-                t = threading.Thread(target=player.signal, args=(game, "OK \033[2J\033[HCards played:",))
+                t = threading.Thread(target=player.signal, args=(game, f"STOP Winner is {oz[0][1]} with {oz[0][0]} points. GG!",))
                 t.start()
             else:
-                player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...")
+                player.send("OK Waiting for the host to continue game...")
         t.join()
-        game.plis()
-    final = "STOP \033[2J\033[H"
-    for player in game.players:
-        announces = f"{player.announces()} -> "
-        _, hands = player.scores(game.ante)
-        final += f"{announces}{hands}\n"
-    game.sendall(final+'\t')
 
 
 def handle_client(client_socket):
@@ -78,7 +97,10 @@ def handle_client(client_socket):
                 print("Unknown player left the server.\n> ", end='')
         else:
             print("Need to delete whole game and send msg to everybody.\n> ", end='')
-            # rooms[room].remove_player(name)
+            for player in rooms[room].players:
+                if player.name != name:
+                    player.send("STOP An error has occured with the room you were in. Room closed.")
+            rooms.pop(room)
 
 def handle_server():
     options = {"help": "Display all commands", "rooms": "Display all existing rooms and the players in it"}

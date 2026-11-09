@@ -24,7 +24,8 @@ class Game:
         for player in self.players:
             if player.name == name:
                 return "Player already exists. Choose another username"
-        self.players.append(Player(name, client))
+        from classes.cli import CLI
+        self.players.append(Player(name, CLI(client)))
         return f"Player '{name}' joined room {room}"
 
     def sendall(self, message: str):

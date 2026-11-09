@@ -4,7 +4,7 @@ from classes.interface import Interface
 class CLI(Interface):
     def __init__(self, socket):
         self.socket = socket
-    
+
     def send(self, string: str):
         string += '\t'
         self.socket.send(string.encode())

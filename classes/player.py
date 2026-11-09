@@ -45,6 +45,8 @@ class Player:
                     )
         if self.announce == 0:
             score += 10*(not len(self.wins))*ante
+        else:
+            score += 20 * (len(self.wins) == self.announce) * self.announce
         score -= 10*abs(len(self.wins)-self.announce)
         return (score, cards)
 
