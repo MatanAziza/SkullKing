@@ -3,11 +3,11 @@ from .cards import Card, Pirate
 import socket
 
 class Player:
-    def __init__(self, name: str, client):
+    def __init__(self, name: str, interface):
         self.hand: list[Card] = []
         self.wins: list[list[Card]] = []
         self.name = name
-        self.client: socket.socket = client
+        self.interface = interface
         self.points = 0
         self.score = 0
         self.announce = 0
@@ -16,10 +16,10 @@ class Player:
         self.hand.clear()
 
     def send(self, string: str):
-        self.client.send(string.encode())
+        self.interface.send(string)
 
     def receive(self) -> str:
-        return self.client.recv(1024).decode("utf-8")
+        return self.interface.receive()
 
     def announces(self):
         return f"{self.name}'s hands: {self.score}/{self.announce}"
@@ -45,6 +45,8 @@ class Player:
                     )
         if self.announce == 0:
             score += 10*(not len(self.wins))*ante
+        else:
+            score += 20 * (len(self.wins) == self.announce) * self.announce
         score -= 10*abs(len(self.wins)-self.announce)
         return (score, cards)
 
@@ -56,53 +58,53 @@ class Player:
 
         self.send(
             f"OK \033[2J\033[HThis is your hand {self.name}:\n"
-            f"{self.show_hand()}\t"
+            f"{self.show_hand()}"
                 )
         while True:
             self.send(
-                "QUESTION How many hands will you bet ?\t"
+                "QUESTION How many hands will you bet ?"
                     )
             index = self.receive()[:-1]
             try:
                 i = int(index)
             except ValueError:
-                self.send("KO Cant bet that! That's not a number!\t")
+                self.send("KO Cant bet that! That's not a number!")
                 continue
             if i > len(self.hand):
-                self.send("Ko Cant bet that! You don't have that many cards!\t")
+                self.send("KO Cant bet that! You don't have that many cards!")
                 continue
             if i < 0:
-                self.send("KO Cant bet that! You can't bet a negative number!\t")
+                self.send("KO Cant bet that! You can't bet a negative number!")
                 continue
             self.announce = i
-            self.send(f"OK You bet {i} hands.\t")
+            self.send(f"OK You bet {i} hands.")
             break
 
     def signal(self, game, message: str):
         self.send(
-            f"CHECK Press Enter to {["start", "continue"][len(self.hand) != game.ante]} hands.\t"
+            f"CHECK Press Enter to {["start", "continue"][len(self.hand) != game.ante]} hands."
                 )
         _ = self.receive()
         for player in game.players:
-            player.client.send(message.encode())
+            player.send(message)
 
     def play(self, color: Color, whale) -> tuple[str, Card]:
         self.send(
             f"OK This is your hand {self.name}:\n"
-            f"{self.show_hand()}\t"
+            f"{self.show_hand()}"
                 )
         while True:
             self.send(
-                "QUESTION Which card do you you want to play ?\t"
+                "QUESTION Which card do you you want to play ?"
                 )
             index = self.receive()[:-1]
             try:
                 i = int(index)
             except ValueError:
-                self.send("KO Cant bet that! That's not a number!\t")
+                self.send("KO Cant bet that! That's not a number!")
                 continue
             if i > len(self.hand) or i == 0:
-                self.send("KO Cant bet that! You don't have a card with this index!\t")
+                self.send("KO Cant bet that! You don't have a card with this index!")
                 continue
             suggested = self.hand[i-1]
             i -= 1
@@ -117,6 +119,6 @@ class Player:
                     break
             if can_play_card or whale:
                 return (str(self.hand[i]), self.hand.pop(i))
-            print(f"KO Can't play {suggested} because you have something else to play.\t")
+            self.send(f"KO Can't play {suggested} because you have something else to play.")
             return self.play(color, whale)
         return (str(self.hand[i]), self.hand.pop(i))

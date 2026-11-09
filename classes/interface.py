@@ -6,6 +6,13 @@ class Interface(ABC):
         self.socket = socket
 
     @abstractmethod
+    def send(self, string: str):
+        pass
+
+    def receive(self) -> str:
+        return self.socket.recv(1024).decode("utf-8")
+
+    @abstractmethod
     def join_room(self, rooms: dict[str, Game]) -> str:
         pass
 
