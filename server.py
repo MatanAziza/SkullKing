@@ -29,13 +29,24 @@ def game_manager(g: dict[str, Game], name: str):
         t.start()
     for t in threads:
         t.join()
-    bets = "OK Players bets:\n" + '\n'.join([player.announces() for player in game.players])
+    bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in game.players])+"\t"
+    game.sendall(bets)
+    for i in range(len(game.players[0].hand)):
+        for player in game.players:
+            if player.name == name:
+                t = threading.Thread(target=player.signal, args=(game, "OK \033[2J\033[HCards played:\t",))
+                t.start()
+            else:
+                player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...\t")
+        t.join()
+        game.plis()
+    final = "STOP \033[2J\033[H"
     for player in game.players:
-        player.send(bets)
-        if player.name == name:
-            player.signal(game, "OK \033[2J\033[HCards played:")
-        else:
-            player.send("OK Waiting for the host to start ...")
+        announces = f"{player.announces()} -> "
+        _, hands = player.scores(game.ante)
+        final += f"{announces}{hands}\n"
+    game.sendall(final+'\t')
+
 
 def handle_client(client_socket):
     name, room = '', ''

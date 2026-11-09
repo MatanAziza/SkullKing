@@ -24,10 +24,11 @@ class Player:
     def announces(self):
         return f"{self.name}'s hands: {self.score}/{self.announce}"
 
-    def scores(self, ante: int):
+    def scores(self, ante: int) -> tuple[int, str]:
         score = 0
+        cards = ""
         for pli in self.wins:
-            print(", ".join([f"{card}" for card in pli]))
+            cards += '['+", ".join([f"{card}" for card in pli])+']\n'
             match pli[0].rank:
                 case Rank.PIRATE:
                     bonus = Rank.SIREN
@@ -45,7 +46,7 @@ class Player:
         if self.announce == 0:
             score += 10*(not len(self.wins))*ante
         score -= 10*abs(len(self.wins)-self.announce)
-        return score
+        return (score, cards)
 
     def show_hand(self):
         return "\n".join([f"{i+1} - " + f"{card}" for i, card in enumerate(self.hand)])
@@ -79,7 +80,7 @@ class Player:
 
     def signal(self, game, message: str):
         self.send(
-            "CHECK Press Enter to start hands.\t"
+            f"CHECK Press Enter to {["start", "continue"][len(self.hand) != game.ante]} hands.\t"
                 )
         _ = self.receive()
         for player in game.players:
@@ -87,12 +88,12 @@ class Player:
 
     def play(self, color: Color, whale) -> tuple[str, Card]:
         self.send(
-            f"OK \033[2J\033[HThis is your hand {self.name}:\n"
+            f"OK This is your hand {self.name}:\n"
             f"{self.show_hand()}\t"
                 )
         while True:
             self.send(
-                f"QUESTION Which card do you you want to play ?\t"
+                "QUESTION Which card do you you want to play ?\t"
                 )
             index = self.receive()[:-1]
             try:
@@ -104,6 +105,7 @@ class Player:
                 self.send("KO Cant bet that! You don't have a card with this index!\t")
                 continue
             suggested = self.hand[i-1]
+            i -= 1
             break
         if suggested.color != color and color != Color.NONE:
             can_play_card = True

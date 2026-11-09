@@ -66,7 +66,7 @@ class CLI(Interface):
             while True:
                 request = self.receive()
                 if request != 'start\n':
-                    self.send("KO Don't understand this command.\nType 'start' to start the game")
+                    self.send("KO Don't understand this command.\t")
                     continue
                 break
             self.send(
@@ -78,5 +78,5 @@ class CLI(Interface):
             if check in ["no\n", "n\n"]:
                 continue
             for player in game.players:
-                player.client.send("START\t".encode())
+                player.send("START\t")
             break

@@ -4,7 +4,7 @@ from classes.cards import ColorCard, Pirate, Siren, WhiteWhale
 
 
 class Game:
-    
+
     class RPS:
         def __init__(self):
             self.skullking = False
@@ -29,7 +29,7 @@ class Game:
 
     def sendall(self, message: str):
         for player in self.players:
-            player.client.send(message)
+            player.send(message)
 
     def remove_player(self, name: str) -> str:
         for i, player in enumerate(self.players):
@@ -48,9 +48,9 @@ class Game:
         for _ in range(self.ante):
             for player in self.players:
                 player.hand.append(deck_round.pop(0).own(player.name))
-        for player in self.players:
-            print(f"{player.name}'s cards:")
-            print(f"- {"\n- ".join(str(card) for card in player.hand)}")
+        # for player in self.players:
+            # print(f"{player.name}'s cards:")
+            # print(f"- {"\n- ".join(str(card) for card in player.hand)}")
 
     def plis(self):
         self.pli: list[Card] = []
@@ -63,7 +63,7 @@ class Game:
                 name, card = player.play(Color.NONE, self.checks.whale)
             for p in self.players:
                 if p.name != player.name:
-                    p.client.send("OK - "+name)
+                    p.send("OK - "+name+'\t')
             self.pli.append(card)
             match self.pli[-1].rank:
                 case Rank.SKULLKING:
@@ -84,15 +84,15 @@ class Game:
                 if self.pli[-1].color != Color.NONE:
                     self.first_color = self.pli[-1].color
         self.sort()
-        self.sendall(f"OK Played cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}\t")
+        self.sendall(f"OK \033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}\t")
         w_card = self.pli[0]
         if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
             w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
-        self.sendall(f"Winning card: {w_card}, owned by {w_card.owner}\t")
+        self.sendall(f"OK Winning card: {w_card}, owned by {w_card.owner}\t")
         if self.checks.kraken > self.checks.whale:
-            self.sendall(', but Kraken killed them all !\t')
+            self.sendall('OK , but Kraken killed them all !\t')
         elif type(self.pli[0]).__name__ == "WhiteWhale":
-            self.sendall(', and none of you were worthy of the White Whale !\t')
+            self.sendall('OK , and none of you were worthy of the White Whale !\t')
         else:
             for player in self.players:
                 if player.name == w_card.owner:
