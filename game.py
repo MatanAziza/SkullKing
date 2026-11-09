@@ -84,11 +84,11 @@ class Game:
                 if self.pli[-1].color != Color.NONE:
                     self.first_color = self.pli[-1].color
         self.sort()
-        self.sendall(f"OK \033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}\t")
+        self.sendall(f"OK \033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
         w_card = self.pli[0]
         if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
             w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
-        self.sendall(f"OK Winning card: {w_card}, owned by {w_card.owner}\t")
+        self.sendall(f"OK Winning card: {w_card}, owned by {w_card.owner}")
         if self.checks.kraken > self.checks.whale:
             self.sendall('OK , but Kraken killed them all !\t')
         elif type(self.pli[0]).__name__ == "WhiteWhale":

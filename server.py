@@ -1,7 +1,7 @@
 import socket
 import threading
 from game import Game
-from cli import CLI
+from classes.cli import CLI
 from typing import Any
 
 bind_ip = "0.0.0.0"
@@ -29,15 +29,15 @@ def game_manager(g: dict[str, Game], name: str):
         t.start()
     for t in threads:
         t.join()
-    bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in game.players])+"\t"
+    bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in game.players])+""
     game.sendall(bets)
     for i in range(len(game.players[0].hand)):
         for player in game.players:
             if player.name == name:
-                t = threading.Thread(target=player.signal, args=(game, "OK \033[2J\033[HCards played:\t",))
+                t = threading.Thread(target=player.signal, args=(game, "OK \033[2J\033[HCards played:",))
                 t.start()
             else:
-                player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...\t")
+                player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...")
         t.join()
         game.plis()
     final = "STOP \033[2J\033[H"
