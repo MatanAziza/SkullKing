@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from main import Game
+from game import Game
 
 class Interface(ABC):
     def __init__(self, socket):

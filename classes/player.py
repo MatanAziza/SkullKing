@@ -25,7 +25,7 @@ class Player:
         return f"{self.name}'s hands: {self.score}/{self.announce}"
 
     def scores(self, ante: int):
-        score = 0;
+        score = 0
         for pli in self.wins:
             print(", ".join([f"{card}" for card in pli]))
             match pli[0].rank:
@@ -59,49 +59,54 @@ class Player:
                 )
         while True:
             self.send(
-                "QUESTION How many hands will you bet ?\n"
+                "QUESTION How many hands will you bet ?\t"
                     )
             index = self.receive()[:-1]
             try:
                 i = int(index)
             except ValueError:
-                self.send("KO Cant bet that! That's not a number!")
+                self.send("KO Cant bet that! That's not a number!\t")
                 continue
             if i > len(self.hand):
-                self.send("Ko Cant bet that! You don't have that many cards!")
+                self.send("Ko Cant bet that! You don't have that many cards!\t")
                 continue
             if i < 0:
-                self.send("KO Cant bet that! You can't bet a negative number!")
+                self.send("KO Cant bet that! You can't bet a negative number!\t")
                 continue
             self.announce = i
-            self.send(f"OK You bet {i} hands.")
+            self.send(f"OK You bet {i} hands.\t")
             break
 
-    def play(self, color: Color, whale):
-        print(f"Which card do you you want to play, {self.name}?")
-        self.show_hand()
+    def play(self, color: Color, whale) -> tuple[str, Card]:
+        self.send(
+            f"OK \033[2J\033[HThis is your hand {self.name}:\n"
+            f"{self.show_hand()}\t"
+                )
         while True:
-            index = input("> ")
-            if not index.isnumeric():
-                print("Cant play that! That's not a number!")
+            self.send(
+                f"QUESTION Which card do you you want to play ?\t"
+                )
+            index = self.receive()[:-1]
+            try:
+                i = int(index)
+            except ValueError:
+                self.send("KO Cant bet that! That's not a number!\t")
                 continue
-            i = int(index)
             if i > len(self.hand) or i == 0:
-                print("Cant play that! You don't have a card with this index!")
+                self.send("KO Cant bet that! You don't have a card with this index!\t")
                 continue
-            i = int(index) - 1
-            suggested = self.hand[i]
+            suggested = self.hand[i-1]
             break
         if suggested.color != color and color != Color.NONE:
             can_play_card = True
             if suggested.color == Color.NONE:
-                return self.hand.pop(i)
+                return (str(self.hand[i]), self.hand.pop(i))
             for card in self.hand:
                 if card.color == color or card.color == Color.BLACK and suggested.color != Color.BLACK:
                     can_play_card = False
                     break
             if can_play_card or whale:
-                return self.hand.pop(i)
-            print(f"Can't play {suggested} because you have something else to play")
+                return (str(self.hand[i]), self.hand.pop(i))
+            print(f"KO Can't play {suggested} because you have something else to play.\t")
             return self.play(color, whale)
-        return self.hand.pop(i)
+        return (str(self.hand[i]), self.hand.pop(i))

@@ -1,4 +1,4 @@
-from main import Game
+from game import Game
 from interface import Interface
 
 class CLI(Interface):
@@ -59,6 +59,14 @@ class CLI(Interface):
         self.send(f"OK Joined with username {request}\t")
         self.send(role.upper()+"\t")
         return request
+
+    def signal(self, game: Game, message: str):
+        self.send(
+            "CHECK Press Enter to start hands.\t"
+                )
+        _ = self.receive()
+        for player in game.players:
+            player.client.send(message.encode())
 
     def start(self, game: Game):
         while True:

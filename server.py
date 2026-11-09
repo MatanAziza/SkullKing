@@ -1,6 +1,6 @@
 import socket
 import threading
-from main import Game
+from game import Game
 from cli import CLI
 from typing import Any
 
@@ -17,7 +17,7 @@ server.listen(5)
 print(f"[+] Listening on port {bind_ip} : {bind_port}")
 rooms: dict[str, Any] = {}
 
-def game_manager(g: dict[str, Game]):
+def game_manager(g: dict[str, Game], name: str):
     game = next(iter(g.values()))
     game.ante = 3
     game.deal()
@@ -29,10 +29,13 @@ def game_manager(g: dict[str, Game]):
         t.start()
     for t in threads:
         t.join()
-    bets = "STOP Players bets:\n" + '\n'.join([player.announces() for player in game.players])
+    bets = "OK Players bets:\n" + '\n'.join([player.announces() for player in game.players])
     for player in game.players:
         player.send(bets)
-        player.client.close()
+        if player.name == name:
+            player.client.signal("OK \033[2J\033[HCards played:")
+        else:
+            player.send("OK Waiting for the host to start ...")
 
 def handle_client(client_socket):
     name, room = '', ''
@@ -52,7 +55,7 @@ def handle_client(client_socket):
         if role == 'host':
             interface.start(rooms[room])
             rooms[room].start = 1
-            threading.Thread(target=game_manager, args=({room: rooms.pop(room)},)).start()
+            threading.Thread(target=game_manager, args=({room: rooms.pop(room)}, name)).start()
     except BrokenPipeError:
         if room == '':
             print("Room wasnt created\n> ", end='')
@@ -81,11 +84,7 @@ def handle_server():
             print("\n".join([f"{k}: {v}" for k, v in options.items()]))
 threading.Thread(target=handle_server).start()
 while True:
-    # When a client connects we receive the
-    # client socket into the client variable, and
-    # the remote connection details into the addr variable
     client, addr = server.accept()
     print(f"\n[+] Accepted connection from: {addr[0]}:{addr[1]}")
-    #spin up our client thread to handle the incoming data
     client_handler = threading.Thread(target=handle_client, args=(client,))
     client_handler.start()

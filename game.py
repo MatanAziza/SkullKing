@@ -2,17 +2,19 @@ from random import shuffle
 from classes import Rank, Player, Deck, Card, Color
 from classes.cards import ColorCard, Pirate, Siren, WhiteWhale
 
-class RPS:
-    def __init__(self):
-        self.skullking = False
-        self.pirate = False
-        self.siren = False
-        self.whale = 0
-        self.kraken = 0
 
 class Game:
+    
+    class RPS:
+        def __init__(self):
+            self.skullking = False
+            self.pirate = False
+            self.siren = False
+            self.whale = 0
+            self.kraken = 0
+
     def __init__(self):
-        self.players = []
+        self.players: list[Player] = []
         self.ante = 1
         self.start = 0
         self.deck = Deck.new()
@@ -24,6 +26,10 @@ class Game:
                 return "Player already exists. Choose another username"
         self.players.append(Player(name, client))
         return f"Player '{name}' joined room {room}"
+
+    def sendall(self, message: str):
+        for player in self.players:
+            player.client.send(message)
 
     def remove_player(self, name: str) -> str:
         for i, player in enumerate(self.players):
@@ -47,20 +53,18 @@ class Game:
             print(f"- {"\n- ".join(str(card) for card in player.hand)}")
 
     def plis(self):
-        print("\033[2J\033[H", end='')
         self.pli: list[Card] = []
-        self.checks = RPS()
+        self.checks = self.RPS()
         self.first_color = Color.NONE
         for player in self.players:
-            input(f"Press Enter to play, {player.name}")
-            print("\033[2J\033[H", end='')
-            print("Cards played:")
-            if self.pli:
-                print(f"{"\n".join([str(card) + f" {card.owner}" for card in self.pli])}")
             try:
-                self.pli.append(player.play(self.first_color, self.checks.whale))
+                name, card = player.play(self.first_color, self.checks.whale)
             except AttributeError:
-                self.pli.append(player.play(Color.NONE, self.checks.whale))
+                name, card = player.play(Color.NONE, self.checks.whale)
+            for p in self.players:
+                if p.name != player.name:
+                    p.client.send("OK - "+name)
+            self.pli.append(card)
             match self.pli[-1].rank:
                 case Rank.SKULLKING:
                     self.checks.skullking = True
@@ -79,17 +83,16 @@ class Game:
             except AttributeError:
                 if self.pli[-1].color != Color.NONE:
                     self.first_color = self.pli[-1].color
-            print("\033[2J\033[H", end='')
         self.sort()
-        print(f"Played cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
+        self.sendall(f"OK Played cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}\t")
         w_card = self.pli[0]
         if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
             w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
-        print(f"Winning card: {w_card}, owned by {w_card.owner}")
+        self.sendall(f"Winning card: {w_card}, owned by {w_card.owner}\t")
         if self.checks.kraken > self.checks.whale:
-            print(', but Kraken killed them all !')
+            self.sendall(', but Kraken killed them all !\t')
         elif type(self.pli[0]).__name__ == "WhiteWhale":
-            print(', and none of you were worthy of the White Whale !')
+            self.sendall(', and none of you were worthy of the White Whale !\t')
         else:
             for player in self.players:
                 if player.name == w_card.owner:
@@ -98,7 +101,6 @@ class Game:
                     break
         r_index = self.player_index(w_card.owner)
         self.players = self.players[r_index:] + self.players[:r_index]
-        input("Press Enter to continue")
 
     def play(self):
         for player in self.players:
