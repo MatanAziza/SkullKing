@@ -60,14 +60,6 @@ class CLI(Interface):
         self.send(role.upper()+"\t")
         return request
 
-    def signal(self, game: Game, message: str):
-        self.send(
-            "CHECK Press Enter to start hands.\t"
-                )
-        _ = self.receive()
-        for player in game.players:
-            player.client.send(message.encode())
-
     def start(self, game: Game):
         while True:
             self.send("CHECK Type 'start' to start the game\t")

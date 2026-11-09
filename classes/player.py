@@ -77,6 +77,14 @@ class Player:
             self.send(f"OK You bet {i} hands.\t")
             break
 
+    def signal(self, game, message: str):
+        self.send(
+            "CHECK Press Enter to start hands.\t"
+                )
+        _ = self.receive()
+        for player in game.players:
+            player.client.send(message.encode())
+
     def play(self, color: Color, whale) -> tuple[str, Card]:
         self.send(
             f"OK \033[2J\033[HThis is your hand {self.name}:\n"

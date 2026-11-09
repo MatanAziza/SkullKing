@@ -33,7 +33,7 @@ def game_manager(g: dict[str, Game], name: str):
     for player in game.players:
         player.send(bets)
         if player.name == name:
-            player.client.signal("OK \033[2J\033[HCards played:")
+            player.signal(game, "OK \033[2J\033[HCards played:")
         else:
             player.send("OK Waiting for the host to start ...")
 
