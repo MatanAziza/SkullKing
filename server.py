@@ -19,7 +19,7 @@ rooms: dict[str, Any] = {}
 
 def game_manager(g: dict[str, Game], name: str):
     game = next(iter(g.values()))
-    for _ in range(3):
+    for ante in range(3):
         game.deal()
         barrier = threading.Barrier(len(game.players))
         threads = []
@@ -60,11 +60,18 @@ def game_manager(g: dict[str, Game], name: str):
             player.score = 0
             player.wins.clear()
             if player.name == name:
-                t = threading.Thread(target=player.signal, args=(game, f"STOP Winner is {oz[0][1]} with {oz[0][0]} points. GG!",))
+                sentence = [
+                    "OK \033[2J\033[HCards played:",
+                    f"STOP Winner is {oz[0][1]} with {oz[0][0]} points. GG!"
+                            ]
+                t = threading.Thread(target=player.signal, args=(game, sentence[ante==2] ,))
+                # remettre STOP en bas apres join
                 t.start()
             else:
                 player.send("OK Waiting for the host to continue game...")
         t.join()
+    for player in game.players:
+        player.interface.client_socket.close()
 
 
 def handle_client(client_socket):
