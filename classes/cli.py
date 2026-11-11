@@ -29,7 +29,7 @@ class CLI(Interface):
             self.question("What's the room's name:")
             request = self.receive()
             if request == '\n':
-                self.ko("Cant join room with empty name!")
+                self.ko("Can't join room with empty name!")
                 continue
             request = request[:-1]
             if rooms.get(request, "error") != "error":
@@ -43,7 +43,7 @@ class CLI(Interface):
             self.question("What's your room name:")
             request = self.receive()
             if request == '\n':
-                self.ko("Cant create room with empty name!")
+                self.ko("Can't create room with empty name!")
                 continue
             request = request[:-1]
             if rooms.get(request, "error") == "error":
@@ -57,7 +57,7 @@ class CLI(Interface):
             self.question("What's your username:")
             request = self.receive()
             if request == '\n':
-                self.ko("Cant create empty username!")
+                self.ko("Can't create empty username!")
                 continue
             request = request[:-1]
             players = [player.name for player in room.players]

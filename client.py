@@ -1,6 +1,5 @@
 import socket
 import threading
-from utils import wait
 from sys import argv, exit
 
 def clean_comm(message: str) -> str:

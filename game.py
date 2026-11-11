@@ -21,13 +21,24 @@ class Game:
         self.deck = Deck.new()
         shuffle(self.deck)
 
-    def end(self, name: str):
-        oz = self.recap()
+    def next(self, name: str, reset: bool, round: int):
+        for player in self.players:
+            if reset:
+                player.score = 0
+                player.wins.clear()
+            if player.name == name:
+                t = threading.Thread(target=player.signal, args=(self, f"OK {self.hands_recap()}Cards played:" ,))
+                t.start()
+            else:
+                player.send(f"OK Waiting for the host to {["start", "continue"][round != 0]}...")
+        t.join()
+
+    def end(self, name: str, oz):
         for player in self.players:
             player.score = 0
             player.wins.clear()
             if player.name == name:
-                t = threading.Thread(target=player.signal, args=(game, f"STOP Winner is {oz[0][1]} with {oz[0][0]} points. GG!" ,))
+                t = threading.Thread(target=player.signal, args=(self, f"STOP Winner is {oz[0][1]} with {oz[0][0]} points. GG!" ,))
                 t.start()
             else:
                 player.send("OK Waiting for the host to finish game...")
@@ -41,7 +52,7 @@ class Game:
         return final+'\n'
 
     def recap(self):
-        final = "\033[2J\033[H"
+        final = "OK \033[2J\033[H"
         r_name = []
         r_points = []
         r_round = []
@@ -57,7 +68,7 @@ class Game:
         z = [f"{x} with {y} points ({z} points this round)" for y, x, z in oz]
         ranking = "\n".join([f"{i+1} - {elem}" for i, elem in enumerate(z)])
         final += ranking
-        self.sendall(final+'\t')
+        self.sendall(final)
         return oz
 
     def bets(self):
@@ -69,7 +80,7 @@ class Game:
             t.start()
         for t in threads:
             t.join()
-        bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in game.players])+""
+        bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in self.players])+""
         self.sendall(bets)
 
     def add_player(self, name: str, cli, room: str) -> str:
@@ -101,6 +112,7 @@ class Game:
         shuffle(deck_round)
         for _ in range(self.ante):
             for player in self.players:
+                player.announce = 0
                 player.hand.append(deck_round.pop(0).own(player.name))
         # for player in self.players:
             # print(f"{player.name}'s cards:")
@@ -144,9 +156,9 @@ class Game:
             w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
         self.sendall(f"OK Winning card: {w_card}, owned by {w_card.owner}")
         if self.checks.kraken > self.checks.whale:
-            self.sendall('OK , but Kraken killed them all !\t')
+            self.sendall('OK , but Kraken killed them all !')
         elif type(self.pli[0]).__name__ == "WhiteWhale":
-            self.sendall('OK , and none of you were worthy of the White Whale !\t')
+            self.sendall('OK , and none of you were worthy of the White Whale !')
         else:
             for player in self.players:
                 if player.name == w_card.owner:

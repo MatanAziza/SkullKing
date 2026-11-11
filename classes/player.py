@@ -68,13 +68,13 @@ class Player:
             try:
                 i = int(index)
             except ValueError:
-                self.send("KO Cant bet that! That's not a number!")
+                self.send("KO Can't bet that! That's not a number!")
                 continue
             if i > len(self.hand):
-                self.send("KO Cant bet that! You don't have that many cards!")
+                self.send("KO Can't bet that! You don't have that many cards!")
                 continue
             if i < 0:
-                self.send("KO Cant bet that! You can't bet a negative number!")
+                self.send("KO Can't bet that! You can't bet a negative number!")
                 continue
             self.announce = i
             self.send(f"OK You bet {i} hands.")
@@ -95,16 +95,16 @@ class Player:
                 )
         while True:
             self.send(
-                "QUESTION Which card do you you want to play ?"
+                "QUESTION Which card do you want to play ?"
                 )
             index = self.receive()[:-1]
             try:
                 i = int(index)
             except ValueError:
-                self.send("KO Cant bet that! That's not a number!")
+                self.send("KO Can't bet that! That's not a number!")
                 continue
             if i > len(self.hand) or i == 0:
-                self.send("KO Cant bet that! You don't have a card with this index!")
+                self.send("KO Can't bet that! You don't have a card with this index!")
                 continue
             suggested = self.hand[i-1]
             i -= 1

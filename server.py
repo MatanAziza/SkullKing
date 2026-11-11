@@ -24,17 +24,21 @@ def game_manager(g: dict[str, Game], name: str):
         game.deal()
         game.bets()
         for i in range(len(game.players[0].hand)):
-            for player in game.players:
-                if player.name == name:
-                    t = threading.Thread(target=player.signal, args=(game, f"OK {game.hands_recap()}HCards played:",))
-                    t.start()
-                else:
-                    player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...")
-            t.join()
+            game.next(name, False, i)
+            # for player in game.players:
+            #     if player.name == name:
+            #         t = threading.Thread(target=player.signal, args=(game, f"OK {game.hands_recap()}Cards played:",))
+            #         t.start()
+            #     else:
+            #         player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...")
+            # t.join()
             game.plis()
+        oz = game.recap()
         game.ante += 1
         if ante == rounds - 1:
-            game.end(name)
+            game.end(name, oz)
+        else:
+            game.next(name, True, 1)
     for player in game.players:
         player.interface.close()
 
