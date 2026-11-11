@@ -58,10 +58,5 @@ while True:
         print(r if not r.startswith(("JOIN", "START")) else "\033[2J\033[HWaiting for the game to start ...")
         if request.startswith("STOP"):
             exit()
-        if request.startswith(("QUESTION", "CHECK")):
+        elif request.startswith(("QUESTION", "CHECK")):
             client.sendall((input()+'\n').encode())
-        elif request.startswith("JOIN"):
-            anim = threading.Thread(target=wait, daemon=True)
-            # anim.start()
-        elif request.startswith("START"):
-            break
