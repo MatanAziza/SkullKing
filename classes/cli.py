@@ -9,17 +9,20 @@ class CLI(Interface):
         string += '\t'
         self.socket.send(string.encode())
 
+    def close(self):
+        self.socket.close()
+
     def question(self, message: str):
-        self.socket.send("QUESTION " + message)
+        self.send("QUESTION " + message)
 
     def check(self, message: str):
-        self.socket.send("CHECK " + message)
+        self.send("CHECK " + message)
 
     def ko(self, message: str):
-        self.socket.send("KO " + message)
+        self.send("KO " + message)
 
     def ok(self, message: str):
-        self.socket.send("OK " + message)
+        self.send("OK " + message)
 
     def join_room(self, rooms: dict[str, Game]) -> str:
         while True:

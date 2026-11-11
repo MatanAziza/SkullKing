@@ -1,4 +1,5 @@
 from random import shuffle
+import threading
 from classes import Rank, Player, Deck, Card, Color
 from classes.cards import ColorCard, Pirate, Siren, WhiteWhale
 
@@ -20,12 +21,63 @@ class Game:
         self.deck = Deck.new()
         shuffle(self.deck)
 
-    def add_player(self, name: str, client, room: str) -> str:
+    def end(self, name: str):
+        oz = self.recap()
+        for player in self.players:
+            player.score = 0
+            player.wins.clear()
+            if player.name == name:
+                t = threading.Thread(target=player.signal, args=(game, f"STOP Winner is {oz[0][1]} with {oz[0][0]} points. GG!" ,))
+                t.start()
+            else:
+                player.send("OK Waiting for the host to finish game...")
+        t.join()
+
+    def hands_recap(self):
+        final = "OK \033[2J\033[H"
+        for player in self.players:
+            announces = f"{player.announces()}\n"
+            final += announces
+        return final+'\n'
+
+    def recap(self):
+        final = "\033[2J\033[H"
+        r_name = []
+        r_points = []
+        r_round = []
+        for player in self.players:
+            announces = f"{player.announces()} -> "
+            points, hands = player.scores(self.ante)
+            player.points += points
+            final += f"{announces}\n{hands}\n"
+            r_name.append(player.name)
+            r_points.append(player.points)
+            r_round.append(points)
+        oz = sorted(zip(r_points, r_name, r_round), reverse=True)
+        z = [f"{x} with {y} points ({z} points this round)" for y, x, z in oz]
+        ranking = "\n".join([f"{i+1} - {elem}" for i, elem in enumerate(z)])
+        final += ranking
+        self.sendall(final+'\t')
+        return oz
+
+    def bets(self):
+        barrier = threading.Barrier(len(self.players))
+        threads = []
+        for player in self.players:
+            t = threading.Thread(target=player.bet, args=(barrier,))
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
+        bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in game.players])+""
+        self.sendall(bets)
+
+    def add_player(self, name: str, cli, room: str) -> str:
         for player in self.players:
             if player.name == name:
                 return "Player already exists. Choose another username"
         from classes.cli import CLI
-        self.players.append(Player(name, CLI(client)))
+        self.players.append(Player(name, cli))
         return f"Player '{name}' joined room {room}"
 
     def sendall(self, message: str):
@@ -46,6 +98,7 @@ class Game:
 
     def deal(self):
         deck_round = self.deck.copy()
+        shuffle(deck_round)
         for _ in range(self.ante):
             for player in self.players:
                 player.hand.append(deck_round.pop(0).own(player.name))
@@ -103,15 +156,6 @@ class Game:
         r_index = self.player_index(w_card.owner)
         self.players = self.players[r_index:] + self.players[:r_index]
 
-    def play(self):
-        for player in self.players:
-            player.bet()
-        for _ in range(len(self.players[0].hand)):
-            self.plis()
-        for player in self.players:
-            print(f"{player.announces()} -> ", end='')
-            print(player.scores(self.ante))
-
     def sort(self):
         self.pli.sort(key=lambda card: card.value, reverse=True)
         try:
@@ -124,3 +168,4 @@ class Game:
             if not [c for c in self.pli if c.value != 0]:
                 while type(self.pli[0]).__name__ != "WhiteWhale":
                     self.pli = self.pli[1:] + self.pli[:1]
+
