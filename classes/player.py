@@ -125,12 +125,12 @@ class Player:
             if i > len(self.hand) or i == 0:
                 self.ko("Can't bet that! You don't have a card with this index!")
                 continue
-            suggested = self.hand[i-1]
             i -= 1
+            suggested = self.hand[i]
             break
-        if suggested.color != color and color != Color.NONE:
+        if suggested.color != color and color not in [Color.FLEE, Color.NONE]:
             can_play_card = True
-            if suggested.color == Color.NONE:
+            if suggested.color in [Color.NONE, Color.FLEE]:
                 return (str(self.hand[i]), self.hand.pop(i))
             for card in self.hand:
                 if card.color == color: # or card.color == Color.BLACK and suggested.color != Color.BLACK:

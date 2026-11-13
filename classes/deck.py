@@ -5,7 +5,7 @@ class Deck:
     def new(cls) -> list[Card]:
         deck: list[Card] = []
         for color in Color:
-            if color == Color.NONE:
+            if color in [Color.NONE, Color.FLEE]:
                 continue
             for i in range(14):
                 deck.append(ColorCard(i+1, color))

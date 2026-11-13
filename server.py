@@ -1,5 +1,6 @@
 import socket
 import threading
+from classes.cards import Pirate, Siren, SkullKing, WhiteWhale
 from game import Game
 from classes.cli import CLI
 from typing import Any
@@ -22,6 +23,15 @@ def game_manager(g: dict[str, Game], name: str):
     rounds = 10
     for ante in range(rounds):
         game.deal()
+        s = WhiteWhale()
+        s.own(game.players[0].name)
+        game.players[0].hand[0] = s
+        sk = SkullKing()
+        sk.own(game.players[1].name)
+        game.players[1].hand[0] = sk
+        p = Pirate()
+        p.own(game.players[2].name)
+        game.players[2].hand[0] = p
         game.bets()
         for i in range(len(game.players[0].hand)):
             game.next(name, False, i)

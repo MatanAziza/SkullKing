@@ -62,9 +62,11 @@ class Flee(Card):
         super().__init__()
         self.bonus = 0
         self.rank = Rank.FLEE
+        self.color = Color.FLEE
         
 class Loot(Card):
     def __init__(self):
         super().__init__()
         self.bonus = 0
         self.rank = Rank.LOOT
+        self.color = Color.FLEE

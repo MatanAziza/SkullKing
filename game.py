@@ -45,7 +45,7 @@ class Game:
         t.join()
 
     def hands_recap(self):
-        final = "\033[2J\033[H"
+        final = f"\033[2J\033[H====== Round n°{self.ante} ======\nStarting player: {self.players[0].name}\n"
         for player in self.players:
             announces = f"{player.announces()}\n"
             final += announces
@@ -121,12 +121,9 @@ class Game:
     def plis(self):
         self.pli: list[Card] = []
         self.checks = self.RPS()
-        self.first_color = Color.NONE
+        self.first_color = Color.FLEE
         for player in self.players:
-            try:
-                name, card = player.play(self.first_color, self.checks.whale)
-            except AttributeError:
-                name, card = player.play(Color.NONE, self.checks.whale)
+            name, card = player.play(self.first_color, self.checks.whale)
             for p in self.players:
                 if p.name != player.name:
                     p.ok("- "+name+'\t')
@@ -144,21 +141,20 @@ class Game:
                 case "WhiteWhale":
                     self.checks.whale += self.checks.kraken + 1
             try:
-                if self.first_color == Color.NONE:
+                if self.first_color == Color.FLEE:
                     raise AttributeError
             except AttributeError:
-                if self.pli[-1].color != Color.NONE:
-                    self.first_color = self.pli[-1].color
+                self.first_color = self.pli[-1].color
         self.sort()
         self.sendall(f"\033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
         w_card = self.pli[0]
-        if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
-            w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
+        # if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
+        #     w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
         self.sendall(f"Winning card: {w_card}, owned by {w_card.owner}")
+        if type(self.pli[0]).__name__ == "WhiteWhale":
+            self.sendall(', and none of you were worthy of the White Whale !')
         if self.checks.kraken > self.checks.whale:
             self.sendall(', but Kraken killed them all !')
-        elif type(self.pli[0]).__name__ == "WhiteWhale":
-            self.sendall(', and none of you were worthy of the White Whale !')
         else:
             for player in self.players:
                 if player.name == w_card.owner:
@@ -169,15 +165,24 @@ class Game:
         self.players = self.players[r_index:] + self.players[:r_index]
 
     def sort(self):
+
+        if self.checks.whale > self.checks.kraken:
+            self.pli.sort(key=lambda card: card.value, reverse=True)
+            if not [c for c in self.pli if c.value != 0]:
+                while type(self.pli[0]).__name__ != "WhiteWhale":
+                    self.pli = self.pli[1:] + self.pli[:1]
+            return
         self.pli.sort(key=lambda card: card.value, reverse=True)
         try:
             self.pli.sort(key=lambda card: card.color == self.first_color, reverse=True)
         except AttributeError:
             pass
         self.pli.sort(key=lambda card: card.rank.value, reverse=True)
-        if self.checks.whale:
-            self.pli.sort(key=lambda card: card.value, reverse=True)
-            if not [c for c in self.pli if c.value != 0]:
-                while type(self.pli[0]).__name__ != "WhiteWhale":
-                    self.pli = self.pli[1:] + self.pli[:1]
-
+        if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
+            i = 0
+            for i, card in enumerate(self.pli):
+                if card.rank == Rank.SIREN:
+                    break
+            siren = self.pli.pop(i)
+            self.pli.insert(0, siren)
+            print(self.pli)

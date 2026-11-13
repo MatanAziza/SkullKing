@@ -2,6 +2,7 @@ from enum import Enum
 
 class Color(Enum):
     NONE=None
+    FLEE="Flee"
     VIOLET="Violet"
     YELLOW="Yellow"
     GREEN="Green"
