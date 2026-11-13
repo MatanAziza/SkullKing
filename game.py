@@ -27,10 +27,10 @@ class Game:
                 player.score = 0
                 player.wins.clear()
             if player.name == name:
-                t = threading.Thread(target=player.signal, args=(self, f"OK {self.hands_recap()}Cards played:" ,))
+                t = threading.Thread(target=player.signal, args=(self, f"{self.hands_recap()}Cards played:" ,))
                 t.start()
             else:
-                player.send(f"OK Waiting for the host to {["start", "continue"][round != 0]}...")
+                player.ok(f"Waiting for the host to {["start", "continue"][round != 0]}...")
         t.join()
 
     def end(self, name: str, oz):
@@ -38,21 +38,21 @@ class Game:
             player.score = 0
             player.wins.clear()
             if player.name == name:
-                t = threading.Thread(target=player.signal, args=(self, f"STOP Winner is {oz[0][1]} with {oz[0][0]} points. GG!" ,))
+                t = threading.Thread(target=player.signal, args=(self, f"Winner is {oz[0][1]} with {oz[0][0]} points. GG!" ,))
                 t.start()
             else:
-                player.send("OK Waiting for the host to finish game...")
+                player.ok("Waiting for the host to finish game...")
         t.join()
 
     def hands_recap(self):
-        final = "OK \033[2J\033[H"
+        final = "\033[2J\033[H"
         for player in self.players:
             announces = f"{player.announces()}\n"
             final += announces
         return final+'\n'
 
     def recap(self):
-        final = "OK \033[2J\033[H"
+        final = "\033[2J\033[H"
         r_name = []
         r_points = []
         r_round = []
@@ -80,7 +80,7 @@ class Game:
             t.start()
         for t in threads:
             t.join()
-        bets = "OK \033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in self.players])+""
+        bets = "\033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in self.players])+""
         self.sendall(bets)
 
     def add_player(self, name: str, cli, room: str) -> str:
@@ -93,7 +93,7 @@ class Game:
 
     def sendall(self, message: str):
         for player in self.players:
-            player.send(message)
+            player.ok(message)
 
     def remove_player(self, name: str) -> str:
         for i, player in enumerate(self.players):
@@ -129,7 +129,7 @@ class Game:
                 name, card = player.play(Color.NONE, self.checks.whale)
             for p in self.players:
                 if p.name != player.name:
-                    p.send("OK - "+name+'\t')
+                    p.ok("- "+name+'\t')
             self.pli.append(card)
             match self.pli[-1].rank:
                 case Rank.SKULLKING:
@@ -150,15 +150,15 @@ class Game:
                 if self.pli[-1].color != Color.NONE:
                     self.first_color = self.pli[-1].color
         self.sort()
-        self.sendall(f"OK \033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
+        self.sendall(f"\033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
         w_card = self.pli[0]
         if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
             w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
-        self.sendall(f"OK Winning card: {w_card}, owned by {w_card.owner}")
+        self.sendall(f"Winning card: {w_card}, owned by {w_card.owner}")
         if self.checks.kraken > self.checks.whale:
-            self.sendall('OK , but Kraken killed them all !')
+            self.sendall(', but Kraken killed them all !')
         elif type(self.pli[0]).__name__ == "WhiteWhale":
-            self.sendall('OK , and none of you were worthy of the White Whale !')
+            self.sendall(', and none of you were worthy of the White Whale !')
         else:
             for player in self.players:
                 if player.name == w_card.owner:

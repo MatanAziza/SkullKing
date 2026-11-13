@@ -24,6 +24,9 @@ class CLI(Interface):
     def ok(self, message: str):
         self.send("OK " + message)
 
+    def stop(self, message: str):
+        self.send("STOP" + message)
+
     def join_room(self, rooms: dict[str, Game]) -> str:
         while True:
             self.question("What's the room's name:")

@@ -12,6 +12,21 @@ class Player:
         self.score = 0
         self.announce = 0
 
+    def question(self, message: str):
+        self.interface.question(message)
+
+    def check(self, message: str):
+        self.interface.check(message)
+
+    def ko(self, message: str):
+        self.interface.ko(message)
+
+    def ok(self, message: str):
+        self.interface.ok(message)
+
+    def stop(self, message: str):
+        self.interface.stop(message)
+
     def clear_hand(self):
         self.hand.clear()
 
@@ -56,55 +71,59 @@ class Player:
     def bet(self, barrier):
         barrier.wait()
 
-        self.send(
-            f"OK \033[2J\033[HThis is your hand {self.name}:\n"
+        self.ok(
+            f"\033[2J\033[HThis is your hand {self.name}:\n"
             f"{self.show_hand()}"
                 )
         while True:
-            self.send(
-                "QUESTION How many hands will you bet ?"
+            self.question(
+                "How many hands will you bet ?"
                     )
             index = self.receive()[:-1]
             try:
                 i = int(index)
             except ValueError:
-                self.send("KO Can't bet that! That's not a number!")
+                self.ko("Can't bet that! That's not a number!")
                 continue
             if i > len(self.hand):
-                self.send("KO Can't bet that! You don't have that many cards!")
+                self.ko("Can't bet that! You don't have that many cards!")
                 continue
             if i < 0:
-                self.send("KO Can't bet that! You can't bet a negative number!")
+                self.ko("Can't bet that! You can't bet a negative number!")
                 continue
             self.announce = i
-            self.send(f"OK You bet {i} hands.")
+            self.ok(f"You bet {i} hands.")
             break
 
     def signal(self, game, message: str):
-        self.send(
-            f"CHECK Press Enter to {["start", "continue"][len(self.hand) != game.ante]} hands."
+        self.check(
+            f"Press Enter to {["start", "continue"][len(self.hand) != game.ante]} hands."
                 )
         _ = self.receive()
-        for player in game.players:
-            player.send(message)
+        if message.startswith("Winner"):
+            for player in game.players:
+                player.stop(message)
+        else:
+            for player in game.players:
+                    player.ok(message)
 
     def play(self, color: Color, whale) -> tuple[str, Card]:
-        self.send(
-            f"OK This is your hand {self.name}:\n"
+        self.ok(
+            f"This is your hand {self.name}:\n"
             f"{self.show_hand()}"
                 )
         while True:
-            self.send(
-                "QUESTION Which card do you want to play ?"
+            self.question(
+                "Which card do you want to play ?"
                 )
             index = self.receive()[:-1]
             try:
                 i = int(index)
             except ValueError:
-                self.send("KO Can't bet that! That's not a number!")
+                self.ko("Can't bet that! That's not a number!")
                 continue
             if i > len(self.hand) or i == 0:
-                self.send("KO Can't bet that! You don't have a card with this index!")
+                self.ko("Can't bet that! You don't have a card with this index!")
                 continue
             suggested = self.hand[i-1]
             i -= 1
@@ -114,11 +133,11 @@ class Player:
             if suggested.color == Color.NONE:
                 return (str(self.hand[i]), self.hand.pop(i))
             for card in self.hand:
-                if card.color == color or card.color == Color.BLACK and suggested.color != Color.BLACK:
+                if card.color == color: # or card.color == Color.BLACK and suggested.color != Color.BLACK:
                     can_play_card = False
                     break
             if can_play_card or whale:
                 return (str(self.hand[i]), self.hand.pop(i))
-            self.send(f"KO Can't play {suggested} because you have something else to play.")
+            self.ko(f"Can't play {suggested} because you have something else to play.")
             return self.play(color, whale)
         return (str(self.hand[i]), self.hand.pop(i))
