@@ -1,4 +1,4 @@
-from game import Game
+from classes.game import Game
 from classes.interface import Interface
 
 class CLI(Interface):

@@ -1,7 +1,7 @@
 import socket
 import threading
 from classes.cards import Pirate, Siren, SkullKing, WhiteWhale
-from game import Game
+from classes.game import Game
 from classes.cli import CLI
 from typing import Any
 
