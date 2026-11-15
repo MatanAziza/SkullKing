@@ -11,6 +11,7 @@ class Player:
         self.points = 0
         self.score = 0
         self.announce = 0
+        self.loot = 0
 
     def question(self, message: str):
         self.interface.question(message)
@@ -63,6 +64,7 @@ class Player:
         else:
             score += 20 * (len(self.wins) == self.announce) * self.announce
         score -= 10*abs(len(self.wins)-self.announce)
+        score += self.loot
         return (score, cards)
 
     def show_hand(self):

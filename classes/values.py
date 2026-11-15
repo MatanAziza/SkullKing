@@ -31,3 +31,10 @@ class Rank(Enum):
     SIREN=2
     PIRATE=3
     SKULLKING=4
+
+class PirateKind(Enum):
+    PIRATE1=1
+    PIRATE2=2
+    PIRATE3=3
+    PIRATE4=4
+    PIRATE5=5

@@ -1,18 +1,18 @@
 from random import shuffle
 import threading
 from classes import Rank, Player, Deck, Card, Color
-from classes.cards import ColorCard, Pirate, Siren, WhiteWhale
+from classes.cards import ColorCard, Pirate, Siren, WhiteWhale, Loot
 
 
 class Game:
 
     class RPS:
         def __init__(self):
-            self.skullking = False
-            self.pirate = False
-            self.siren = False
-            self.whale = 0
-            self.kraken = 0
+            self.skullking: bool = False
+            self.pirate: bool = False
+            self.siren: bool = False
+            self.whale: bool = False
+            self.kraken: bool = False
 
     def __init__(self):
         self.players: list[Player] = []
@@ -20,6 +20,11 @@ class Game:
         self.start = 0
         self.deck = Deck.new()
         shuffle(self.deck)
+
+    def player_index(self, name: str):
+        for i, player in enumerate(self.players):
+            if player.name == name:
+                return i
 
     def next(self, name: str, reset: bool, round: int):
         for player in self.players:
@@ -51,11 +56,30 @@ class Game:
             final += announces
         return final+'\n'
 
+    def loot(self):
+        for w_id in range(len(self.players)):
+            if self.players[w_id].score != self.players[w_id].announce or not self.players[w_id].wins:
+                return
+            for pli in self.players[w_id].wins:
+                owners = []
+                for card in pli:
+                    if type(card).__name__ == "Loot":
+                        owners.append(self.player_index(card.owner))
+                for owner in owners:
+                    if self.players[owner].score != self.players[owner].announce:
+                        continue
+                    self.players[w_id].loot += 20
+                    if self.players[owner].name != self.players[w_id].name:
+                        self.players[owner].loot += 20
+            for player in self.players:
+                player.ok(f"- {player.name}'s loot: {player.loot}")
+
     def recap(self):
         final = "\033[2J\033[H"
         r_name = []
         r_points = []
         r_round = []
+        self.loot()
         for player in self.players:
             announces = f"{player.announces()} -> "
             points, hands = player.scores(self.ante)
@@ -114,9 +138,7 @@ class Game:
             for player in self.players:
                 player.announce = 0
                 player.hand.append(deck_round.pop(0).own(player.name))
-        # for player in self.players:
-            # print(f"{player.name}'s cards:")
-            # print(f"- {"\n- ".join(str(card) for card in player.hand)}")
+            self.players[0].hand[0] = Loot().own("M")
 
     def plis(self):
         self.pli: list[Card] = []
@@ -126,24 +148,23 @@ class Game:
             name, card = player.play(self.first_color, self.checks.whale)
             for p in self.players:
                 if p.name != player.name:
-                    p.ok("- "+name+'\t')
+                    p.ok("- "+name)
             self.pli.append(card)
-            match self.pli[-1].rank:
+            match card.rank:
                 case Rank.SKULLKING:
                     self.checks.skullking = True
                 case Rank.SIREN:
                     self.checks.siren = True
                 case Rank.PIRATE:
                     self.checks.pirate = True
-            match type(self.pli[-1]).__name__:
+            match type(card).__name__:
                 case "Kraken":
-                    self.checks.kraken += self.checks.whale + 1
+                    self.checks.kraken = True
+                    self.checks.whale = False
                 case "WhiteWhale":
-                    self.checks.whale += self.checks.kraken + 1
-            try:
-                if self.first_color == Color.FLEE:
-                    raise AttributeError
-            except AttributeError:
+                    self.checks.kraken = False
+                    self.checks.whale = True
+            if self.first_color == Color.FLEE:
                 self.first_color = self.pli[-1].color
         self.sort()
         self.sendall(f"\033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
@@ -153,7 +174,7 @@ class Game:
         self.sendall(f"Winning card: {w_card}, owned by {w_card.owner}")
         if type(self.pli[0]).__name__ == "WhiteWhale":
             self.sendall(', and none of you were worthy of the White Whale !')
-        if self.checks.kraken > self.checks.whale:
+        if self.checks.kraken:
             self.sendall(', but Kraken killed them all !')
         else:
             for player in self.players:
@@ -165,8 +186,7 @@ class Game:
         self.players = self.players[r_index:] + self.players[:r_index]
 
     def sort(self):
-
-        if self.checks.whale > self.checks.kraken:
+        if self.checks.whale:
             self.pli.sort(key=lambda card: card.value, reverse=True)
             if not [c for c in self.pli if c.value != 0]:
                 while type(self.pli[0]).__name__ != "WhiteWhale":
@@ -178,7 +198,7 @@ class Game:
         except AttributeError:
             pass
         self.pli.sort(key=lambda card: card.rank.value, reverse=True)
-        if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
+        if self.checks.skullking and self.checks.siren and not self.checks.whale:
             i = 0
             for i, card in enumerate(self.pli):
                 if card.rank == Rank.SIREN:
