@@ -10,16 +10,16 @@ class Color(Enum):
 
 class SColor(Enum):
     NONE=None
-    VIOLET="\033[0;35m"
+    VIOLET="\033[0;95m"
     YELLOW="\033[0;33m"
     GREEN="\033[0;32m"
-    BLACK="\033[0;37m"
-    SIREN="\033[0;36m"
-    PIRATE="\033[0;31m"
+    BLACK="\033[0;90m"
+    SIREN="\033[1;36m"
+    PIRATE="\033[1;31m"
     KRAKEN="\033[1;35m"
-    WHITEWHALE="\033[1;37m"
-    SKULLKING="\033[40m"
-    FLEE="\033[0;37m"
+    WHITEWHALE="\033[1;97m"
+    SKULLKING="\033[7;01m"
+    FLEE="\033[0;97m"
     LOOT="\033[1;33m"
 
 class Rank(Enum):
@@ -33,8 +33,11 @@ class Rank(Enum):
     SKULLKING=4
 
 class PirateKind(Enum):
-    PIRATE1=1
-    PIRATE2=2
-    PIRATE3=3
-    PIRATE4=4
-    PIRATE5=5
+    ROSIE="Rosie the Sweetheart"
+    RASCAL="Rascal the Gambler"
+    WILL="Will the Bandit"
+    JUANITA="Juanita Jade"
+    HARRY="Harry the Giant"
+
+    def fn(self):
+        print("test")

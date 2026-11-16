@@ -70,11 +70,11 @@ class Player:
     def show_hand(self):
         return "\n".join([f"{i+1} - " + f"{card}" for i, card in enumerate(self.hand)])
 
-    def bet(self, barrier):
+    def bet(self, barrier, message):
         barrier.wait()
 
         self.ok(
-            f"\033[2J\033[HThis is your hand {self.name}:\n"
+            f"{message}This is your hand {self.name}:\n"
             f"{self.show_hand()}"
                 )
         while True:

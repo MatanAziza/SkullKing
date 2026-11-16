@@ -18,30 +18,26 @@ server.listen(5)
 print(f"[+] Listening on port {bind_ip} : {bind_port}")
 rooms: dict[str, Any] = {}
 
+def cheat(game):
+    s = WhiteWhale()
+    s.own(game.players[0].name)
+    game.players[0].hand[0] = s
+    sk = SkullKing()
+    sk.own(game.players[1].name)
+    game.players[1].hand[0] = sk
+    p = Pirate()
+    p.own(game.players[2].name)
+    game.players[2].hand[0] = p
+
 def game_manager(g: dict[str, Game], name: str):
     game = next(iter(g.values()))
+    # cheat(game)
     rounds = 10
     for ante in range(rounds):
         game.deal()
-        # s = WhiteWhale()
-        # s.own(game.players[0].name)
-        # game.players[0].hand[0] = s
-        # sk = SkullKing()
-        # sk.own(game.players[1].name)
-        # game.players[1].hand[0] = sk
-        # p = Pirate()
-        # p.own(game.players[2].name)
-        # game.players[2].hand[0] = p
         game.bets()
         for i in range(len(game.players[0].hand)):
             game.next(name, False, i)
-            # for player in game.players:
-            #     if player.name == name:
-            #         t = threading.Thread(target=player.signal, args=(game, f"OK {game.hands_recap()}Cards played:",))
-            #         t.start()
-            #     else:
-            #         player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...")
-            # t.join()
             game.plis()
         oz = game.recap()
         game.ante += 1
