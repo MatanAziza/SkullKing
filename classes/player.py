@@ -73,29 +73,33 @@ class Player:
     def bet(self, barrier, message):
         barrier.wait()
 
-        self.ok(
+        
+        try:
+            self.ok(
             f"{message}This is your hand {self.name}:\n"
             f"{self.show_hand()}"
                 )
-        while True:
-            self.question(
-                "How many hands will you bet ?"
-                    )
-            index = self.receive()[:-1]
-            try:
-                i = int(index)
-            except ValueError:
-                self.ko("Can't bet that! That's not a number!")
-                continue
-            if i > len(self.hand):
-                self.ko("Can't bet that! You don't have that many cards!")
-                continue
-            if i < 0:
-                self.ko("Can't bet that! You can't bet a negative number!")
-                continue
-            self.announce = i
-            self.ok(f"You bet {i} hands.")
-            break
+            while True:
+                self.question(
+                    "How many hands will you bet ?"
+                        )
+                index = self.receive()[:-1]
+                try:
+                    i = int(index)
+                except ValueError:
+                    self.ko("Can't bet that! That's not a number!")
+                    continue
+                if i > len(self.hand):
+                    self.ko("Can't bet that! You don't have that many cards!")
+                    continue
+                if i < 0:
+                    self.ko("Can't bet that! You can't bet a negative number!")
+                    continue
+                self.announce = i
+                self.ok(f"You bet {i} hands.")
+                break
+        except BrokenPipeError:
+            pass
 
     def signal(self, game, message: str):
         self.check(

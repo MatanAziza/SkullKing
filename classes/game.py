@@ -28,7 +28,10 @@ class Game:
 
     def sendall(self, message: str):
         for player in self.players:
-            player.ok(message)
+            try:
+                player.ok(message)
+            except BrokenPipeError:
+                raise BrokenPipeError(player.name)
 
     def hands_recap(self):
         start = len(self.players[0].hand) == self.ante
@@ -51,7 +54,7 @@ class Game:
         for i, player in enumerate(self.players):
             if player.name == name:
                 self.players.pop(i)
-                return "Player has been removed"
+                return f"'{name}' has been removed"
         return f"Player '{name}' doesn't exist"
 
     def deal(self):
@@ -72,13 +75,17 @@ class Game:
         for t in threads:
             t.join()
         bets = "\033[2J\033[HPlayers bets:\n" + '\n'.join([player.announces() for player in self.players])+""
-        self.sendall(bets)
+        try:
+            self.sendall(bets)
+        except BrokenPipeError as e:
+            raise BrokenPipeError(e.args[0])
 
     def next(self, name: str, reset: bool, round: int):
         for player in self.players:
             if reset:
                 player.score = 0
                 player.wins.clear()
+                player.hand.clear()
             if player.name == name:
                 t = threading.Thread(target=player.signal, args=(self, f"{self.hands_recap()}" ,))
                 t.start()
@@ -91,27 +98,31 @@ class Game:
         self.checks = self.RPS()
         self.first_color = Color.FLEE
         for player in self.players:
-            name, card = player.play(self.first_color, self.checks.whale)
-            for p in self.players:
-                if p.name != player.name:
-                    p.ok("- "+name)
-            self.pli.append(card)
-            match card.rank:
-                case Rank.SKULLKING:
-                    self.checks.skullking = True
-                case Rank.SIREN:
-                    self.checks.siren = True
-                case Rank.PIRATE:
-                    self.checks.pirate = True
-            match type(card).__name__:
-                case "Kraken":
-                    self.checks.kraken = True
-                    self.checks.whale = False
-                case "WhiteWhale":
-                    self.checks.kraken = False
-                    self.checks.whale = True
-            if self.first_color == Color.FLEE:
-                self.first_color = self.pli[-1].color
+            try:
+                name, card = player.play(self.first_color, self.checks.whale)
+                for p in self.players:
+                    if p.name != player.name:
+                        p.ok("- "+name)
+                self.pli.append(card)
+                match card.rank:
+                    case Rank.SKULLKING:
+                        self.checks.skullking = True
+                    case Rank.SIREN:
+                        self.checks.siren = True
+                    case Rank.PIRATE:
+                        self.checks.pirate = True
+                match type(card).__name__:
+                    case "Kraken":
+                        self.checks.kraken = True
+                        self.checks.whale = False
+                    case "WhiteWhale":
+                        self.checks.kraken = False
+                        self.checks.whale = True
+                if self.first_color == Color.FLEE:
+                    self.first_color = self.pli[-1].color
+            except BrokenPipeError:
+                self.remove_player(player.name)
+                raise BrokenPipeError(player.name)
         self.sort()
         self.sendall(f"\033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
         w_card = self.pli[0]

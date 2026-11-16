@@ -35,9 +35,14 @@ class CLI(Interface):
                 self.ko("Can't join room with empty name!")
                 continue
             request = request[:-1]
-            if rooms.get(request, "error") != "error":
-                break
-            self.ko("Room doesn't exists!")
+            room = rooms.get(request, "error")
+            if room == "error":
+                self.ko("Room doesn't exists!")
+                continue
+            if room.start:
+                self.ko("Room already has started")
+                continue
+            break
         self.ok(f"Room '{request}' joined.")
         return request
 
