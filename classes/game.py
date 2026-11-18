@@ -1,7 +1,9 @@
 from random import shuffle
 import threading
+import queue
 from classes import Rank, Player, Deck, Card, Color
-from classes.cards import Loot
+from classes.cards import Pirate
+from classes.values import PirateKind
 
 
 class Game:
@@ -34,14 +36,12 @@ class Game:
                 raise BrokenPipeError(player.name)
 
     def hands_recap(self):
-        start = len(self.players[0].hand) == self.ante
         final = f"\033[2J\033[H====== Round n°{self.ante} ======\nStarting player: {self.players[0].name}\n"
-        if not start:
-            for player in self.players:
-                announces = f"{player.announces()}\n"
-                final += announces
-        final += "Cards played:"
-        return final+'\n'
+        for player in self.players:
+            announces = f"{player.announces()}\n"
+            final += announces
+        final += "\nCards played:"
+        return final
 
     def add_player(self, name: str, cli, room: str) -> str:
         for player in self.players:
@@ -67,6 +67,7 @@ class Game:
 
     def bets(self):
         barrier = threading.Barrier(len(self.players))
+        print(1)
         threads = []
         for player in self.players:
             t = threading.Thread(target=player.bet, args=(barrier,f"{self.hands_recap()}",))
@@ -97,6 +98,7 @@ class Game:
         self.pli: list[Card] = []
         self.checks = self.RPS()
         self.first_color = Color.FLEE
+        next_starter = ""
         for player in self.players:
             try:
                 name, card = player.play(self.first_color, self.checks.whale)
@@ -118,6 +120,12 @@ class Game:
                     case "WhiteWhale":
                         self.checks.kraken = False
                         self.checks.whale = True
+                if type(card).__name__ == "Pirate":
+                    match card.kind:
+                        case PirateKind.ROSIE:
+                            next_starter = self.next_starter("", player.name)
+                        case PirateKind.RASCAL:
+                            self.rascal(player.name)
                 if self.first_color == Color.FLEE:
                     self.first_color = self.pli[-1].color
             except BrokenPipeError:
@@ -134,12 +142,12 @@ class Game:
         if self.checks.kraken:
             self.sendall(', but Kraken killed them all !')
         else:
-            for player in self.players:
-                if player.name == w_card.owner:
-                    player.score += 1
-                    player.wins.append(self.pli)
-                    break
-        r_index = self.player_index(w_card.owner)
+            w_index = self.player_index(w_card.owner)
+            self.players[w_index].score += 1
+            self.players[w_index].wins.append(self.pli)
+        if not next_starter:
+            next_starter = w_card.owner
+        r_index = self.player_index(next_starter)
         self.players = self.players[r_index:] + self.players[:r_index]
 
     def sort(self):
@@ -203,6 +211,27 @@ class Game:
         self.sendall(final)
         return oz
 
+    def rascal(self, rascal: str):
+        for player in self.players:
+            if player.name == rascal:
+                t = threading.Thread(target=PirateKind.rascal, args=(player,))
+                t.start()
+            else:
+                player.ok("\nWaiting for Rascal to go all in...")
+        t.join()
+
+    def next_starter(self, winner: str, rosie: str):
+        if rosie:
+            q = queue.Queue()
+            for player in self.players:
+                if player.name == rosie:
+                    t = threading.Thread(target=PirateKind.rosie, args=(player, self, q,))
+                    t.start()
+                else:
+                    player.ok("\nWaiting for Rosie to chose who will start...")
+            t.join()
+            return q.get()
+
     def end(self, name: str, oz):
         for player in self.players:
             player.score = 0
@@ -213,4 +242,17 @@ class Game:
             else:
                 player.ok("Waiting for the host to finish game...")
         t.join()
+
+    def recover(self, p_name: str, name) -> str:
+        print(self.remove_player(p_name))
+        self.sendall(f"{p_name} has left the game. Round will be started again.")
+        if p_name == name:
+            try:
+                name = self.players[0].name
+            except IndexError:
+                print("All players left room")
+                return ""
+            self.sendall(f"{p_name} was host. New host is {name}")
+        self.next(name, True, 1)
+        return name
 

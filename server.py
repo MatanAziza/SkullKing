@@ -1,6 +1,7 @@
 import socket
 import threading
 from classes.cards import Pirate, Siren, SkullKing, WhiteWhale
+from classes.values import PirateKind
 from classes.game import Game
 from classes.cli import CLI
 from typing import Any
@@ -20,39 +21,34 @@ rooms: dict[str, Any] = {}
 stop = False
 
 def cheat(game):
-    s = WhiteWhale()
+    s = Pirate(PirateKind.ROSIE)
     s.own(game.players[0].name)
     game.players[0].hand[0] = s
-    sk = SkullKing()
-    sk.own(game.players[1].name)
-    game.players[1].hand[0] = sk
-    p = Pirate()
-    p.own(game.players[2].name)
-    game.players[2].hand[0] = p
+    r = Pirate(PirateKind.RASCAL)
+    r.own(game.players[1].name)
+    game.players[1].hand[0] = r
+    # sk = SkullKing()
+    # sk.own(game.players[1].name)
+    # game.players[1].hand[0] = sk
+    # p = Pirate()
+    # p.own(game.players[2].name)
+    # game.players[2].hand[0] = p
 
 def game_manager(g: dict[str, Game], name: str):
     game = next(iter(g.values()))
-    # cheat(game)
     rounds = 10
     while game.ante <= rounds:
         try:
             game.deal()
+            cheat(game)
             game.bets()
             for i in range(len(game.players[0].hand)):
                 game.next(name, False, i)
                 game.plis()
         except BrokenPipeError as p_name:
-            p_name = p_name.args[0]
-            print(game.remove_player(p_name))
-            game.sendall(f"{p_name} has left the game. Round will be started again.")
-            if p_name == name:
-                try:
-                    name = game.players[0].name
-                except IndexError:
-                    print("All players left room")
-                    return
-                game.sendall(f"{p_name} was host. New host is {name}")
-            game.next(name, True, 1)
+            name = game.recover(p_name.args[0], name)
+            if not name:
+                return
             continue
         oz = game.recap()
         game.ante += 1
@@ -78,7 +74,7 @@ def handle_client(client_socket):
             print("[+] Joiner connected\n> ", end='')
             room = interface.join_room(rooms)
         name = interface.ask_name(rooms[room], role)
-        rooms[room].add_player(name, interface, room)
+        print(rooms[room].add_player(name, interface, room))
         if role == 'host':
             interface.start(rooms[room])
             rooms[room].start = 1
@@ -108,15 +104,12 @@ def handle_server():
     while True:
         i = input("What is your request?\n> ")
         if i == "rooms":
-            if not rooms and not current_rooms:
+            if not rooms:
                 print("No rooms created right now")
                 continue
             for r, g in rooms.items():
                 print(f"Room {r} players:")
                 print("- "+"\n- ".join([p.name for p in g.players]))
-            for r, g in current_rooms.items():
-                print(f"Room '{r}' players:")
-                print("- "+"\n- ".join([p for p in g]))
         elif i == "clear":
             print("\033[2J\033[H")
         elif i == "help":

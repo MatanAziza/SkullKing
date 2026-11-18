@@ -12,6 +12,7 @@ class Player:
         self.score = 0
         self.announce = 0
         self.loot = 0
+        self.rascal = 0
 
     def question(self, message: str):
         self.interface.question(message)
@@ -65,6 +66,10 @@ class Player:
             score += 20 * (len(self.wins) == self.announce) * self.announce
         score -= 10*abs(len(self.wins)-self.announce)
         score += self.loot
+        if self.score == self.announce:
+            score += self.rascal
+        else:
+            score -= self.rascal
         return (score, cards)
 
     def show_hand(self):
@@ -72,8 +77,6 @@ class Player:
 
     def bet(self, barrier, message):
         barrier.wait()
-
-        
         try:
             self.ok(
             f"{message}This is your hand {self.name}:\n"

@@ -42,7 +42,7 @@ class Pirate(Card):
         self.kind = kind
 
     def __str__(self) -> str:
-        return f"🪎  {SColor[type(self).__name__.upper()].value}{self.kind.value}\033[0;97m 🪎"
+        return f"🪎  {SColor[type(self).__name__.upper()].value}{self.kind.value}\033[0;97m 🪎 "
 
 
 class SkullKing(Card):
@@ -65,14 +65,14 @@ class Kraken(Creature):
         super().__init__()
 
     def __str__(self) -> str:
-        return f"🐙 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🐙"
+        return f"🐙 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🐙 "
 
 class WhiteWhale(Creature):
     def __init__(self):
         super().__init__()
 
     def __str__(self) -> str:
-        return f"🐋 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🐋"
+        return f"🐋 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🐋 "
 
 class Flee(Card):
     def __init__(self):
@@ -82,7 +82,7 @@ class Flee(Card):
         self.color = Color.FLEE
 
     def __str__(self) -> str:
-        return f"🏳️  {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🏳️"
+        return f"🏳️  {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🏳️ "
 
 class Loot(Card):
     def __init__(self):
@@ -92,4 +92,4 @@ class Loot(Card):
         self.color = Color.FLEE
 
     def __str__(self) -> str:
-        return f"🪙 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🪙"
+        return f"🪙 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🪙 "
