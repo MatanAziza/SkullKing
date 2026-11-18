@@ -21,12 +21,15 @@ class Game:
         self.ante = 1
         self.start = 0
         self.deck = Deck.new()
+        self.deck_round = Deck()
         shuffle(self.deck)
+        shuffle(self.players)
 
     def player_index(self, name: str):
         for i, player in enumerate(self.players):
             if player.name == name:
                 return i
+        return 0
 
     def sendall(self, message: str):
         for player in self.players:
@@ -58,16 +61,15 @@ class Game:
         return f"Player '{name}' doesn't exist"
 
     def deal(self):
-        deck_round = self.deck.copy()
-        shuffle(deck_round)
+        self.deck_round = self.deck.copy()
+        shuffle(self.deck_round)
         for _ in range(self.ante):
             for player in self.players:
                 player.announce = 0
-                player.hand.append(deck_round.pop(0).own(player.name))
+                player.hand.append(self.deck_round.pop(0).own(player.name))
 
     def bets(self):
         barrier = threading.Barrier(len(self.players))
-        print(1)
         threads = []
         for player in self.players:
             t = threading.Thread(target=player.bet, args=(barrier,f"{self.hands_recap()}",))
@@ -82,6 +84,7 @@ class Game:
             raise BrokenPipeError(e.args[0])
 
     def next(self, name: str, reset: bool, round: int):
+        ok = False
         for player in self.players:
             if reset:
                 player.score = 0
@@ -90,8 +93,11 @@ class Game:
             if player.name == name:
                 t = threading.Thread(target=player.signal, args=(self, f"{self.hands_recap()}" ,))
                 t.start()
+                ok = True
             else:
                 player.ok(f"Waiting for the host to {["start", "continue"][round != 0]}...")
+        if not ok:
+            return
         t.join()
 
     def plis(self):
@@ -105,7 +111,6 @@ class Game:
                 for p in self.players:
                     if p.name != player.name:
                         p.ok("- "+name)
-                self.pli.append(card)
                 match card.rank:
                     case Rank.SKULLKING:
                         self.checks.skullking = True
@@ -121,15 +126,26 @@ class Game:
                         self.checks.kraken = False
                         self.checks.whale = True
                 if type(card).__name__ == "Pirate":
+                    assert isinstance(card, Pirate)
                     match card.kind:
                         case PirateKind.ROSIE:
                             next_starter = self.next_starter("", player.name)
                         case PirateKind.RASCAL:
                             self.rascal(player.name)
+                        case PirateKind.HARRY:
+                            player.harry = 1
+                        case PirateKind.WILL:
+                            self.will(player.name)
+                        case PirateKind.JUANITA:
+                            self.juanita(player.name)
+                        case PirateKind.TIGRESS:
+                            self.tigress(player.name, card)
+                print(card.rank, card.value, card.color)
+                self.pli.append(card)
                 if self.first_color == Color.FLEE:
                     self.first_color = self.pli[-1].color
             except BrokenPipeError:
-                self.remove_player(player.name)
+                # self.remove_player(player.name)
                 raise BrokenPipeError(player.name)
         self.sort()
         self.sendall(f"\033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
@@ -163,9 +179,12 @@ class Game:
         except AttributeError:
             pass
         self.pli.sort(key=lambda card: card.rank.value, reverse=True)
+        for card in self.pli:
+            print(card.rank, card.value, card.color)
         if self.checks.skullking and self.checks.siren and not self.checks.whale:
             i = 0
             for i, card in enumerate(self.pli):
+                print(card.rank, card.value, card.color)
                 if card.rank == Rank.SIREN:
                     break
             siren = self.pli.pop(i)
@@ -211,6 +230,33 @@ class Game:
         self.sendall(final)
         return oz
 
+    def tigress(self, tigress: str, card: Card):
+        for player in self.players:
+            if player.name == tigress:
+                t = threading.Thread(target=PirateKind.tigress, args=(player, card))
+                t.start()
+            else:
+                player.ok("\nWaiting for the Tigress to chose the better way...")
+        t.join()
+
+    def juanita(self, juanita: str):
+        for player in self.players:
+            if player.name == juanita:
+                t = threading.Thread(target=PirateKind.juanita, args=(player, self))
+                t.start()
+            else:
+                player.ok("\nWaiting for Juanita to scheme her plans...")
+        t.join()
+
+    def will(self, will: str):
+        for player in self.players:
+            if player.name == will:
+                t = threading.Thread(target=PirateKind.will, args=(player, self))
+                t.start()
+            else:
+                player.ok("\nWaiting for Will to steal some cards...")
+        t.join()
+
     def rascal(self, rascal: str):
         for player in self.players:
             if player.name == rascal:
@@ -233,26 +279,33 @@ class Game:
             return q.get()
 
     def end(self, name: str, oz):
+        ok = False
         for player in self.players:
             player.score = 0
             player.wins.clear()
             if player.name == name:
                 t = threading.Thread(target=player.signal, args=(self, f"Winner is {oz[0][1]} with {oz[0][0]} points. GG!" ,))
                 t.start()
+                ok = True
             else:
                 player.ok("Waiting for the host to finish game...")
+        if not ok:
+            return
         t.join()
 
     def recover(self, p_name: str, name) -> str:
-        print(self.remove_player(p_name))
-        self.sendall(f"{p_name} has left the game. Round will be started again.")
-        if p_name == name:
-            try:
-                name = self.players[0].name
-            except IndexError:
-                print("All players left room")
-                return ""
-            self.sendall(f"{p_name} was host. New host is {name}")
-        self.next(name, True, 1)
-        return name
+        try:
+            print(self.remove_player(p_name))
+            if p_name == name:
+                try:
+                    name = self.players[0].name
+                except IndexError:
+                    print("All players left room")
+                    return ""
+                self.sendall(f"{p_name} was host. New host is {name}")
+            self.sendall(f"{p_name} has left the game. Round will be started again.")
+            self.next(name, True, 1)
+            return name
+        except BrokenPipeError as player_name:
+            return self.recover(player_name.args[0], name)
 

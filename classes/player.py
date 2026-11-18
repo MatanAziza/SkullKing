@@ -13,6 +13,7 @@ class Player:
         self.announce = 0
         self.loot = 0
         self.rascal = 0
+        self.harry = 0
 
     def question(self, message: str):
         self.interface.question(message)
@@ -60,16 +61,19 @@ class Player:
                 for card in pli
                 if card.rank == bonus or card.value == 14
                     )
-        if self.announce == 0:
-            score += 10*(not len(self.wins))*ante
-        else:
-            score += 20 * (len(self.wins) == self.announce) * self.announce
-        score -= 10*abs(len(self.wins)-self.announce)
-        score += self.loot
-        if self.score == self.announce:
-            score += self.rascal
-        else:
+        diff_score = abs(self.score - self.announce) - self.harry
+        if diff_score:
+            score -= 10 * diff_score
             score -= self.rascal
+        else:
+            score += self.rascal
+            if self.announce == 0:
+                score += 10 * ante
+            else:
+                score += 20 * self.score
+        score += self.loot
+        self.rascal = 0
+        self.harry = 0
         return (score, cards)
 
     def show_hand(self):

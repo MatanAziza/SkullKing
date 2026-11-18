@@ -21,12 +21,12 @@ rooms: dict[str, Any] = {}
 stop = False
 
 def cheat(game):
-    s = Pirate(PirateKind.ROSIE)
+    s = Pirate(PirateKind.TIGRESS)
     s.own(game.players[0].name)
     game.players[0].hand[0] = s
-    r = Pirate(PirateKind.RASCAL)
-    r.own(game.players[1].name)
-    game.players[1].hand[0] = r
+    # r = Pirate(PirateKind.HARRY)
+    # r.own(game.players[1].name)
+    # game.players[1].hand[0] = r
     # sk = SkullKing()
     # sk.own(game.players[1].name)
     # game.players[1].hand[0] = sk
@@ -48,8 +48,11 @@ def game_manager(g: dict[str, Game], name: str):
         except BrokenPipeError as p_name:
             name = game.recover(p_name.args[0], name)
             if not name:
-                return
+                break
             continue
+        except ValueError as e:
+            print(e)
+            break
         oz = game.recap()
         game.ante += 1
         if game.ante == rounds - 1:
