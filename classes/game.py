@@ -101,7 +101,7 @@ class Game:
     def plis(self):
         self.pli: list[Card] = []
         self.checks = self.RPS()
-        self.first_color = Color.FLEE
+        self.first_color = Color.ESCAPE
         next_starter = ""
         for player in self.players:
             try:
@@ -112,7 +112,7 @@ class Game:
                 match card.rank:
                     case Rank.SKULLKING:
                         self.checks.skullking = True
-                    case Rank.SIREN:
+                    case Rank.MERMAID:
                         self.checks.siren = True
                     case Rank.PIRATE:
                         self.checks.pirate = True
@@ -126,7 +126,7 @@ class Game:
                 if type(card).__name__ == "Pirate":
                     next_starter = self.pirates(card, player)
                 self.pli.append(card)
-                if self.first_color == Color.FLEE:
+                if self.first_color == Color.ESCAPE:
                     self.first_color = self.pli[-1].color
             except BrokenPipeError:
                 raise BrokenPipeError(player.name)
@@ -134,7 +134,7 @@ class Game:
         self.sendall(f"\033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
         w_card = self.pli[0]
         # if self.checks.skullking and self.checks.siren and self.checks.kraken >= self.checks.whale:
-        #     w_card = next(c for c in self.pli if c.rank == Rank.SIREN)
+        #     w_card = next(c for c in self.pli if c.rank == Rank.MERMAID)
         self.sendall(f"Winning card: {w_card}, owned by {w_card.owner}")
         if type(self.pli[0]).__name__ == "WhiteWhale":
             self.sendall(', and none of you were worthy of the White Whale !')
@@ -165,7 +165,7 @@ class Game:
         if self.checks.skullking and self.checks.siren and not self.checks.whale:
             i = 0
             for i, card in enumerate(self.pli):
-                if card.rank == Rank.SIREN:
+                if card.rank == Rank.MERMAID:
                     break
             siren = self.pli.pop(i)
             self.pli.insert(0, siren)
