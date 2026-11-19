@@ -23,7 +23,6 @@ class Game:
         self.deck = Deck.new()
         self.deck_round = Deck()
         shuffle(self.deck)
-        shuffle(self.players)
 
     def player_index(self, name: str):
         for i, player in enumerate(self.players):
@@ -63,9 +62,10 @@ class Game:
     def deal(self):
         self.deck_round = self.deck.copy()
         shuffle(self.deck_round)
+        for player in self.players:
+            player.reset_round()
         for _ in range(self.ante):
             for player in self.players:
-                player.announce = 0
                 player.hand.append(self.deck_round.pop(0).own(player.name))
 
     def bets(self):
@@ -87,9 +87,7 @@ class Game:
         ok = False
         for player in self.players:
             if reset:
-                player.score = 0
-                player.wins.clear()
-                player.hand.clear()
+                player.reset_round()
             if player.name == name:
                 t = threading.Thread(target=player.signal, args=(self, f"{self.hands_recap()}" ,))
                 t.start()
@@ -126,26 +124,11 @@ class Game:
                         self.checks.kraken = False
                         self.checks.whale = True
                 if type(card).__name__ == "Pirate":
-                    assert isinstance(card, Pirate)
-                    match card.kind:
-                        case PirateKind.ROSIE:
-                            next_starter = self.next_starter("", player.name)
-                        case PirateKind.RASCAL:
-                            self.rascal(player.name)
-                        case PirateKind.HARRY:
-                            player.harry = 1
-                        case PirateKind.WILL:
-                            self.will(player.name)
-                        case PirateKind.JUANITA:
-                            self.juanita(player.name)
-                        case PirateKind.TIGRESS:
-                            self.tigress(player.name, card)
-                print(card.rank, card.value, card.color)
+                    next_starter = self.pirates(card, player)
                 self.pli.append(card)
                 if self.first_color == Color.FLEE:
                     self.first_color = self.pli[-1].color
             except BrokenPipeError:
-                # self.remove_player(player.name)
                 raise BrokenPipeError(player.name)
         self.sort()
         self.sendall(f"\033[2J\033[HPlayed cards:\n- {"\n- ".join(str(card) + f" {card.owner}" for card in self.pli)}")
@@ -179,12 +162,9 @@ class Game:
         except AttributeError:
             pass
         self.pli.sort(key=lambda card: card.rank.value, reverse=True)
-        for card in self.pli:
-            print(card.rank, card.value, card.color)
         if self.checks.skullking and self.checks.siren and not self.checks.whale:
             i = 0
             for i, card in enumerate(self.pli):
-                print(card.rank, card.value, card.color)
                 if card.rank == Rank.SIREN:
                     break
             siren = self.pli.pop(i)
@@ -230,10 +210,27 @@ class Game:
         self.sendall(final)
         return oz
 
+    def pirates(self, card, player):
+        assert isinstance(card, Pirate)
+        match card.kind:
+            case PirateKind.ROSIE:
+                return self.next_starter("", player.name)
+            case PirateKind.RASCAL:
+                self.rascal(player.name)
+            case PirateKind.HARRY:
+                player.harry = 1
+            case PirateKind.WILL:
+                self.will(player.name)
+            case PirateKind.JUANITA:
+                self.juanita(player.name)
+            case PirateKind.TIGRESS:
+                self.tigress(player.name, card)
+        return ''
+
     def tigress(self, tigress: str, card: Card):
         for player in self.players:
             if player.name == tigress:
-                t = threading.Thread(target=PirateKind.tigress, args=(player, card))
+                t = threading.Thread(target=PirateKind.tigress, args=(player, card, self,))
                 t.start()
             else:
                 player.ok("\nWaiting for the Tigress to chose the better way...")
@@ -260,7 +257,7 @@ class Game:
     def rascal(self, rascal: str):
         for player in self.players:
             if player.name == rascal:
-                t = threading.Thread(target=PirateKind.rascal, args=(player,))
+                t = threading.Thread(target=PirateKind.rascal, args=(player, self,))
                 t.start()
             else:
                 player.ok("\nWaiting for Rascal to go all in...")
@@ -281,8 +278,7 @@ class Game:
     def end(self, name: str, oz):
         ok = False
         for player in self.players:
-            player.score = 0
-            player.wins.clear()
+            player.reset_round()
             if player.name == name:
                 t = threading.Thread(target=player.signal, args=(self, f"Winner is {oz[0][1]} with {oz[0][0]} points. GG!" ,))
                 t.start()

@@ -61,7 +61,7 @@ class PirateKind(Enum):
                 if i < 0:
                     player.ko(f"Can't make player {i + 1} start! There's no player 0!")
                     continue
-                player.ok(f"You chose {game.players[i].name} to start.")
+                game.sendall(f"{player.name} chose {game.players[i].name} to start.")
                 queue.put(game.players[i].name)
                 player.check("Press Enter to continue")
                 _ = player.receive()
@@ -70,7 +70,7 @@ class PirateKind(Enum):
             pass
 
     @staticmethod
-    def rascal(player):
+    def rascal(player, game):
         try:
             while True:
                 player.question(
@@ -86,7 +86,7 @@ class PirateKind(Enum):
                 if i not in [1, 2, 3]:
                     player.ko("Can't place this bet! That's not an option.")
                     continue
-                player.ok(f"You chose to bet {(i-1)*10} points. Good luck!")
+                game.sendall(f"{player.name} chose to bet {(i-1)*10} points. Good luck!")
                 player.rascal = (i-1)*10
                 player.check("Press Enter to continue")
                 _ = player.receive()
@@ -97,6 +97,9 @@ class PirateKind(Enum):
     @staticmethod
     def will(player, game):
         try:
+            if len(player.hand) == 0:
+                player.ok("You don't have anymore cards to play next turn.")
+                return
             cards = [game.deck_round.pop(0), game.deck_round.pop(0)]
             player.ok(
                 "You can trade one of those two cards for one in your deck:\n"
@@ -166,7 +169,7 @@ class PirateKind(Enum):
             pass
 
     @staticmethod
-    def tigress(player, card):
+    def tigress(player, card, game):
         try:
             while True:
                 player.question(
@@ -184,7 +187,7 @@ class PirateKind(Enum):
                     continue
                 if i == 2:
                     card.rank = Rank.FLEE
-                player.ok(f"You're playing The Tigress as a {["Pirate", "Flee"][i-1]}")
+                game.sendall(f"{player.name} is playing The Tigress as a {["Pirate", "Flee"][i-1]}")
                 player.check("Press Enter to continue")
                 _ = player.receive()
                 return

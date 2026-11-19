@@ -40,7 +40,7 @@ class CLI(Interface):
                 self.ko("Room doesn't exists!")
                 continue
             if room.start:
-                self.ko("Room already has started")
+                self.ko("Room has already started")
                 continue
             break
         self.ok(f"Room '{request}' joined.")

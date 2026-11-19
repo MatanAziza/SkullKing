@@ -42,6 +42,15 @@ class Player:
     def announces(self):
         return f"{self.name}'s hands: {self.score}/{self.announce}"
 
+    def reset_round(self):
+        self.score = 0
+        self.announce = 0
+        self.loot = 0
+        self.rascal = 0
+        self.harry = 0
+        self.wins.clear()
+        self.hand.clear()
+
     def scores(self, ante: int) -> tuple[int, str]:
         score = 0
         cards = ""

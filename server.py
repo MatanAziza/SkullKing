@@ -1,5 +1,6 @@
 import socket
 import threading
+import random
 from classes.cards import Pirate, Siren, SkullKing, WhiteWhale
 from classes.values import PirateKind
 from classes.game import Game
@@ -36,11 +37,12 @@ def cheat(game):
 
 def game_manager(g: dict[str, Game], name: str):
     game = next(iter(g.values()))
+    random.shuffle(game.players)
     rounds = 10
     while game.ante <= rounds:
         try:
             game.deal()
-            cheat(game)
+            # cheat(game)
             game.bets()
             for i in range(len(game.players[0].hand)):
                 game.next(name, False, i)
@@ -48,6 +50,7 @@ def game_manager(g: dict[str, Game], name: str):
         except BrokenPipeError as p_name:
             name = game.recover(p_name.args[0], name)
             if not name:
+                rooms.pop(next(iter(g.keys())))
                 break
             continue
         except ValueError as e:
@@ -81,10 +84,10 @@ def handle_client(client_socket):
         if role == 'host':
             interface.start(rooms[room])
             rooms[room].start = 1
-            threading.Thread(target=game_manager, args=({room: rooms.pop(room)}, name)).start()
+            threading.Thread(target=game_manager, args=({room: rooms[room]}, name)).start()
     except BrokenPipeError:
         if room == '':
-            print("Room wasnt created\n> ", end='')
+            print("Room wasnt created/joined\n> ", end='')
         elif name == '':
             if role == 'host':
                 print(f"Room {room} will be closed.\n> ", end='')
