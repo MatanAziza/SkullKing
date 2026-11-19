@@ -1,3 +1,5 @@
+from classes.values import PirateKind
+
 from .cards import Card, Color, ColorCard, Pirate, Flee, Siren, Loot, SkullKing, Kraken, WhiteWhale
 
 class Deck:
@@ -9,8 +11,8 @@ class Deck:
                 continue
             for i in range(14):
                 deck.append(ColorCard(i+1, color))
-        for i in range(5):
-            deck.append(Pirate())
+        for kind in PirateKind:
+            deck.append(Pirate(kind))
         for i in range(5):
             deck.append(Flee())
         for i in range(2):
@@ -20,4 +22,9 @@ class Deck:
         deck.append(SkullKing())
         deck.append(Kraken())
         deck.append(WhiteWhale())
+        # print("Hello")
+        # for card in deck:
+        #     if card.value in (0, 14):
+        #         print(card)
+        # print("GB")
         return deck

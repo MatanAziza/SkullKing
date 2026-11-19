@@ -11,6 +11,9 @@ class Player:
         self.points = 0
         self.score = 0
         self.announce = 0
+        self.loot = 0
+        self.rascal = 0
+        self.harry = 0
 
     def question(self, message: str):
         self.interface.question(message)
@@ -39,6 +42,15 @@ class Player:
     def announces(self):
         return f"{self.name}'s hands: {self.score}/{self.announce}"
 
+    def reset_round(self):
+        self.score = 0
+        self.announce = 0
+        self.loot = 0
+        self.rascal = 0
+        self.harry = 0
+        self.wins.clear()
+        self.hand.clear()
+
     def scores(self, ante: int) -> tuple[int, str]:
         score = 0
         cards = ""
@@ -58,42 +70,52 @@ class Player:
                 for card in pli
                 if card.rank == bonus or card.value == 14
                     )
-        if self.announce == 0:
-            score += 10*(not len(self.wins))*ante
+        diff_score = abs(self.score - self.announce) - self.harry
+        if diff_score:
+            score -= 10 * diff_score
+            score -= self.rascal
         else:
-            score += 20 * (len(self.wins) == self.announce) * self.announce
-        score -= 10*abs(len(self.wins)-self.announce)
+            score += self.rascal
+            if self.announce == 0:
+                score += 10 * ante
+            else:
+                score += 20 * self.score
+        score += self.loot
+        self.rascal = 0
+        self.harry = 0
         return (score, cards)
 
     def show_hand(self):
         return "\n".join([f"{i+1} - " + f"{card}" for i, card in enumerate(self.hand)])
 
-    def bet(self, barrier):
+    def bet(self, barrier, message):
         barrier.wait()
-
-        self.ok(
-            f"\033[2J\033[HThis is your hand {self.name}:\n"
+        try:
+            self.ok(
+            f"{message}This is your hand {self.name}:\n"
             f"{self.show_hand()}"
                 )
-        while True:
-            self.question(
-                "How many hands will you bet ?"
-                    )
-            index = self.receive()[:-1]
-            try:
-                i = int(index)
-            except ValueError:
-                self.ko("Can't bet that! That's not a number!")
-                continue
-            if i > len(self.hand):
-                self.ko("Can't bet that! You don't have that many cards!")
-                continue
-            if i < 0:
-                self.ko("Can't bet that! You can't bet a negative number!")
-                continue
-            self.announce = i
-            self.ok(f"You bet {i} hands.")
-            break
+            while True:
+                self.question(
+                    "How many hands will you bet ?"
+                        )
+                index = self.receive()[:-1]
+                try:
+                    i = int(index)
+                except ValueError:
+                    self.ko("Can't bet that! That's not a number!")
+                    continue
+                if i > len(self.hand):
+                    self.ko("Can't bet that! You don't have that many cards!")
+                    continue
+                if i < 0:
+                    self.ko("Can't bet that! You can't bet a negative number!")
+                    continue
+                self.announce = i
+                self.ok(f"You bet {i} hands.")
+                break
+        except BrokenPipeError:
+            pass
 
     def signal(self, game, message: str):
         self.check(

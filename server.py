@@ -1,6 +1,8 @@
 import socket
 import threading
+import random
 from classes.cards import Pirate, Siren, SkullKing, WhiteWhale
+from classes.values import PirateKind
 from classes.game import Game
 from classes.cli import CLI
 from typing import Any
@@ -17,35 +19,46 @@ server.listen(5)
 
 print(f"[+] Listening on port {bind_ip} : {bind_port}")
 rooms: dict[str, Any] = {}
+stop = False
+
+def cheat(game):
+    s = Pirate(PirateKind.TIGRESS)
+    s.own(game.players[0].name)
+    game.players[0].hand[0] = s
+    # r = Pirate(PirateKind.HARRY)
+    # r.own(game.players[1].name)
+    # game.players[1].hand[0] = r
+    # sk = SkullKing()
+    # sk.own(game.players[1].name)
+    # game.players[1].hand[0] = sk
+    # p = Pirate()
+    # p.own(game.players[2].name)
+    # game.players[2].hand[0] = p
 
 def game_manager(g: dict[str, Game], name: str):
     game = next(iter(g.values()))
+    random.shuffle(game.players)
     rounds = 10
-    for ante in range(rounds):
-        game.deal()
-        # s = WhiteWhale()
-        # s.own(game.players[0].name)
-        # game.players[0].hand[0] = s
-        # sk = SkullKing()
-        # sk.own(game.players[1].name)
-        # game.players[1].hand[0] = sk
-        # p = Pirate()
-        # p.own(game.players[2].name)
-        # game.players[2].hand[0] = p
-        game.bets()
-        for i in range(len(game.players[0].hand)):
-            game.next(name, False, i)
-            # for player in game.players:
-            #     if player.name == name:
-            #         t = threading.Thread(target=player.signal, args=(game, f"OK {game.hands_recap()}Cards played:",))
-            #         t.start()
-            #     else:
-            #         player.send(f"OK Waiting for the host to {["start", "continue"][i != 0]} ...")
-            # t.join()
-            game.plis()
+    while game.ante <= rounds:
+        try:
+            game.deal()
+            # cheat(game)
+            game.bets()
+            for i in range(len(game.players[0].hand)):
+                game.next(name, False, i)
+                game.plis()
+        except BrokenPipeError as p_name:
+            name = game.recover(p_name.args[0], name)
+            if not name:
+                rooms.pop(next(iter(g.keys())))
+                break
+            continue
+        except ValueError as e:
+            print(e)
+            break
         oz = game.recap()
         game.ante += 1
-        if ante == rounds - 1:
+        if game.ante == rounds - 1:
             game.end(name, oz)
         else:
             game.next(name, True, 1)
@@ -67,14 +80,14 @@ def handle_client(client_socket):
             print("[+] Joiner connected\n> ", end='')
             room = interface.join_room(rooms)
         name = interface.ask_name(rooms[room], role)
-        rooms[room].add_player(name, interface, room)
+        print(rooms[room].add_player(name, interface, room))
         if role == 'host':
             interface.start(rooms[room])
             rooms[room].start = 1
-            threading.Thread(target=game_manager, args=({room: rooms.pop(room)}, name)).start()
+            threading.Thread(target=game_manager, args=({room: rooms[room]}, name)).start()
     except BrokenPipeError:
         if room == '':
-            print("Room wasnt created\n> ", end='')
+            print("Room wasnt created/joined\n> ", end='')
         elif name == '':
             if role == 'host':
                 print(f"Room {room} will be closed.\n> ", end='')
@@ -89,7 +102,11 @@ def handle_client(client_socket):
             rooms.pop(room)
 
 def handle_server():
-    options = {"help": "Display all commands", "rooms": "Display all existing rooms and the players in it"}
+    options = {
+        "help": "Display all commands",
+        "rooms": "Display all existing rooms and the players in it",
+        "clear": "Clear Terminal",
+            }
     while True:
         i = input("What is your request?\n> ")
         if i == "rooms":
@@ -99,8 +116,11 @@ def handle_server():
             for r, g in rooms.items():
                 print(f"Room {r} players:")
                 print("- "+"\n- ".join([p.name for p in g.players]))
+        elif i == "clear":
+            print("\033[2J\033[H")
         elif i == "help":
             print("\n".join([f"{k}: {v}" for k, v in options.items()]))
+
 threading.Thread(target=handle_server).start()
 while True:
     client, addr = server.accept()
