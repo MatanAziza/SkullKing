@@ -1,7 +1,7 @@
 import socket
 import threading
 import random
-from classes.cards import Pirate, Siren, SkullKing, WhiteWhale
+from classes.cards import Pirate, Mermaid, SkullKing, WhiteWhale
 from classes.values import PirateKind
 from classes.game import Game
 from classes.cli import CLI

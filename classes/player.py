@@ -58,10 +58,10 @@ class Player:
             cards += '['+", ".join([f"{card}" for card in pli])+']\n'
             match pli[0].rank:
                 case Rank.PIRATE:
-                    bonus = Rank.SIREN
+                    bonus = Rank.MERMAID
                 case Rank.SKULLKING:
                     bonus = Rank.PIRATE
-                case Rank.SIREN:
+                case Rank.MERMAID:
                     bonus = Rank.SKULLKING
                 case _:
                     bonus = Rank.COLOR
@@ -150,9 +150,9 @@ class Player:
             i -= 1
             suggested = self.hand[i]
             break
-        if suggested.color != color and color not in [Color.FLEE, Color.NONE]:
+        if suggested.color != color and color not in [Color.ESCAPE, Color.NONE]:
             can_play_card = True
-            if suggested.color in [Color.NONE, Color.FLEE]:
+            if suggested.color in [Color.NONE, Color.ESCAPE]:
                 return (str(self.hand[i]), self.hand.pop(i))
             for card in self.hand:
                 if card.color == color: # or card.color == Color.BLACK and suggested.color != Color.BLACK:

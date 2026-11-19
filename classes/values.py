@@ -2,7 +2,7 @@ from enum import Enum
 
 class Color(Enum):
     NONE="None"
-    FLEE="Flee"
+    ESCAPE="Escape"
     VIOLET="Violet"
     YELLOW="Yellow"
     GREEN="Green"
@@ -14,21 +14,21 @@ class SColor(Enum):
     YELLOW="\033[0;33m"
     GREEN="\033[0;32m"
     BLACK="\033[0;90m"
-    SIREN="\033[1;36m"
+    MERMAID="\033[1;36m"
     PIRATE="\033[1;31m"
     KRAKEN="\033[1;35m"
     WHITEWHALE="\033[1;97m"
     SKULLKING="\033[7;01m"
-    FLEE="\033[0;97m"
+    ESCAPE="\033[0;97m"
     LOOT="\033[1;33m"
 
 class Rank(Enum):
     CREATURE=-3
-    FLEE=-2
+    ESCAPE=-2
     LOOT=-1
     COLOR=0
     BLACK=1
-    SIREN=2
+    MERMAID=2
     PIRATE=3
     SKULLKING=4
 
@@ -174,7 +174,7 @@ class PirateKind(Enum):
             while True:
                 player.question(
                     "\nDo you want to play the Tigress as:\n"
-                    "1 - A 🪎 \033[1;31mPirate\033[0;97m🪎 \n2 - A 🏳️  Flee 🏳️ \n"
+                    "1 - A 🪎 \033[1;31mPirate\033[0;97m🪎 \n2 - A 🏳️  Escape 🏳️ \n"
                         )
                 index = player.receive()[:-1]
                 try:
@@ -186,8 +186,8 @@ class PirateKind(Enum):
                     player.ko("Can't make this choice! That's not an option.")
                     continue
                 if i == 2:
-                    card.rank = Rank.FLEE
-                game.sendall(f"{player.name} is playing The Tigress as a {["Pirate", "Flee"][i-1]}")
+                    card.rank = Rank.ESCAPE
+                game.sendall(f"{player.name} is playing The Tigress as a {["Pirate", "Escape"][i-1]}")
                 player.check("Press Enter to continue")
                 _ = player.receive()
                 return

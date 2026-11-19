@@ -25,11 +25,11 @@ class ColorCard(Card):
     def __str__(self) -> str:
         return f"{SColor[self.color.name].value}{str(self.color.value)} {self.value}\033[0;97m"
 
-class Siren(Card):
+class Mermaid(Card):
     def __init__(self):
         super().__init__()
         self.bonus = 20
-        self.rank = Rank.SIREN
+        self.rank = Rank.MERMAID
 
     def __str__(self) -> str:
         return f"🧜 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🧜"
@@ -74,12 +74,12 @@ class WhiteWhale(Creature):
     def __str__(self) -> str:
         return f"🐋 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🐋 "
 
-class Flee(Card):
+class Escape(Card):
     def __init__(self):
         super().__init__()
         self.bonus = 0
-        self.rank = Rank.FLEE
-        self.color = Color.FLEE
+        self.rank = Rank.ESCAPE
+        self.color = Color.ESCAPE
 
     def __str__(self) -> str:
         return f"🏳️  {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🏳️ "
@@ -89,7 +89,7 @@ class Loot(Card):
         super().__init__()
         self.bonus = 0
         self.rank = Rank.LOOT
-        self.color = Color.FLEE
+        self.color = Color.ESCAPE
 
     def __str__(self) -> str:
         return f"🪙 {SColor[type(self).__name__.upper()].value}{type(self).__name__}\033[0;97m 🪙 "
