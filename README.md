@@ -17,8 +17,8 @@ The [rulebook](en-rules.pdf) explains everything you need to know to play. The g
 ## Requirements
 
 - A terminal
-- The [`server.zip`](https://github.com/MatanAziza/SkullKing/releases/latest/download/server.zip) release (for the host only)
-- The [`client.zip`](https://github.com/MatanAziza/SkullKing/releases/latest/download/client.zip) release (for every player)
+- The [`server.zip`](https://github.com/MatanAziza/SkullKing/releases/download/0.9/server.zip) release (for the host only)
+- The [`client.zip`](https://github.com/MatanAziza/SkullKing/releases/download/0.9/client.zip) release (for every player)
 - A local network connection, or a virtual LAN such as [Hamachi](https://www.vpn.net/) for remote play
 
 ## How to Play
